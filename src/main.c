@@ -225,8 +225,73 @@ const interrupt_t vector_table[] __attribute__ ((section(".vtab"))) = {
 
 int main(void)
 {
-
-
-	for(;;);
+	// ========================================
+	// Configuración de reloj: 72MHz vía PLL
+	// ========================================
+	DEVMAP->RCC.REGs.CR |= (1 << 16);              // Habilitar HSE (8MHz)
+	while (!(DEVMAP->RCC.REGs.CR & (1 << 17)));    // Esperar HSE ready
+	
+	DEVMAP->RCC.REGs.CR &= ~(1 << 24);             // Deshabilitar PLL
+	DEVMAP->RCC.REGs.CFGR |= (0b0111 << 18);       // PLLMUL = 9 (8MHz * 9 = 72MHz)
+	DEVMAP->RCC.REGs.CFGR |= (1 << 16);            // PLLSRC = HSE
+	DEVMAP->RCC.REGs.CR |= (1 << 24);              // Habilitar PLL
+	while (!(DEVMAP->RCC.REGs.CR & (1 << 25)));    // Esperar PLL ready
+	
+	DEVMAP->FLASH.REGs.ACR |= (0b010 << 0);        // FLASH: 2 wait states
+	DEVMAP->RCC.REGs.CFGR |= (0b100 << 8);         // APB1: /2 (36MHz)
+	
+	DEVMAP->RCC.REGs.CFGR |= (0b10 << 0);          // SW = PLL
+	while (!(DEVMAP->RCC.REGs.CFGR & (0b10 << 2))); // Esperar conmutación
+	
+	// ========================================
+	// Habilitar relojes periféricos
+	// ========================================
+	DEVMAP->RCC.REGs.APB2ENR |= (1 << 2);  // GPIOA clock enable
+	DEVMAP->RCC.REGs.APB2ENR |= (1 << 0);  // AFIO clock enable
+	
+	// ========================================
+	// Deshabilitar JTAG para liberar PA15
+	// ========================================
+	// AFIO->MAPR: SWJ_CFG = 010 (JTAG-DP Disabled, SW-DP Enabled)
+	// Esto libera PA15, PB3, PB4 pero mantiene PA13 (SWDIO) y PA14 (SWCLK)
+	uint32_t *AFIO_MAPR = (uint32_t*)(0x40010000 + 0x04);  // AFIO base + offset MAPR
+	*AFIO_MAPR &= ~(0b111 << 24);  // Limpiar bits SWJ_CFG[26:24]
+	*AFIO_MAPR |=  (0b010 << 24);  // SWJ_CFG = 010 (Deshabilitar JTAG, mantener SWD)
+	
+	// ========================================
+	// Configurar PA[15:0] como salidas 50MHz push-pull
+	// ========================================
+	// CRL configura PA[7:0]:   MODE=11 (50MHz), CNF=00 (Push-pull) = 0x3 por pin
+	// CRH configura PA[15:8]:  MODE=11 (50MHz), CNF=00 (Push-pull) = 0x3 por pin
+	DEVMAP->GPIOs[GPIOA].REGs.CRL = 0x33333333;  // PA[7:0]  como salidas
+	DEVMAP->GPIOs[GPIOA].REGs.CRH = 0x33333333;  // PA[15:8] como salidas
+	
+	// ========================================
+	// Bucle principal: encender LEDs en secuencia
+	// ========================================
+	// LEDs en PA0-PA12 y PA15 (14 LEDs totales)
+	const uint16_t led_pins[14] = {
+		7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15
+	};
+	
+	uint8_t led_index = 0;
+	
+	for(;;) {
+		// Apagar todos los LEDs
+		DEVMAP->GPIOs[GPIOA].REGs.ODR = 0x0000;
+		
+		// Encender LED actual
+		DEVMAP->GPIOs[GPIOA].REGs.ODR |= (1 << led_pins[led_index]);
+		
+		// Delay simple (~100ms a 72MHz)
+		for (volatile uint32_t i = 0; i < 720000; i++);
+		
+		// Avanzar al siguiente LED (cíclico)
+		led_index++;
+		if (led_index >= 14) {
+			led_index = 0;
+		}
+	}
+	
 	return 0;
 }
