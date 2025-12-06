@@ -243,11 +243,13 @@ int main(void)
 	DEVMAP->RCC.REGs.CFGR |= (0b10 << 0);          // SW = PLL
 	while (!(DEVMAP->RCC.REGs.CFGR & (0b10 << 2))); // Esperar conmutación
 	
-	// ========================================
-	// Habilitar relojes periféricos
-	// ========================================
-	DEVMAP->RCC.REGs.APB2ENR |= (1 << 2);  // GPIOA clock enable
-	DEVMAP->RCC.REGs.APB2ENR |= (1 << 0);  // AFIO clock enable
+        // ========================================
+        // Habilitar relojes periféricos
+        // ========================================
+        DEVMAP->RCC.REGs.APB2ENR |= (1 << 2);  // GPIOA clock enable
+        DEVMAP->RCC.REGs.APB2ENR |= (1 << 3);  // GPIOB clock enable
+        DEVMAP->RCC.REGs.APB2ENR |= (1 << 9);  // ADC1 clock enable
+        DEVMAP->RCC.REGs.APB2ENR |= (1 << 0);  // AFIO clock enable
 	
 	// ========================================
 	// Deshabilitar JTAG para liberar PA15
@@ -255,12 +257,32 @@ int main(void)
 	// AFIO->MAPR: SWJ_CFG = 010 (JTAG-DP Disabled, SW-DP Enabled)
 	// Esto libera PA15, PB3, PB4 pero mantiene PA13 (SWDIO) y PA14 (SWCLK)
 	uint32_t *AFIO_MAPR = (uint32_t*)(0x40010000 + 0x04);  // AFIO base + offset MAPR
-	*AFIO_MAPR &= ~(0b111 << 24);  // Limpiar bits SWJ_CFG[26:24]
-	*AFIO_MAPR |=  (0b010 << 24);  // SWJ_CFG = 010 (Deshabilitar JTAG, mantener SWD)
-	
-	// ========================================
-	// Configurar PA[15:0] como salidas 50MHz push-pull
-	// ========================================
+        *AFIO_MAPR &= ~(0b111 << 24);  // Limpiar bits SWJ_CFG[26:24]
+        *AFIO_MAPR |=  (0b010 << 24);  // SWJ_CFG = 010 (Deshabilitar JTAG, mantener SWD)
+
+        // ========================================
+        // Configurar PB1 como entrada analógica (ADC1_IN9)
+        // ========================================
+        DEVMAP->GPIOs[GPIOB].REGs.CRL &= ~((uint32_t)0xF << 4);
+
+        // ========================================
+        // Configurar ADC1 para lecturas continuas en canal 9 (PB1)
+        // ========================================
+        DEVMAP->ADC[ADC1].REGs.SMPR2 |= (0b110 << (3 * 9));  // Sample time alto para estabilidad
+        DEVMAP->ADC[ADC1].REGs.SQR1 &= ~(0b1111 << 20);       // Longitud de secuencia = 1
+        DEVMAP->ADC[ADC1].REGs.SQR3  = 9;                    // Canal 9 como primera conversión
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 1);             // Modo continuo
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 0);             // Encender ADC
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 3);             // Reset calibration
+        while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 3));
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 2);             // Calibración
+        while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 2));
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 20);            // Habilitar disparo por software
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 22);            // Iniciar conversiones continuas
+
+        // ========================================
+        // Configurar PA[15:0] como salidas 50MHz push-pull
+        // ========================================
 	// CRL configura PA[7:0]:   MODE=11 (50MHz), CNF=00 (Push-pull) = 0x3 por pin
 	// CRH configura PA[15:8]:  MODE=11 (50MHz), CNF=00 (Push-pull) = 0x3 por pin
 	DEVMAP->GPIOs[GPIOA].REGs.CRL = 0x33333333;  // PA[7:0]  como salidas
@@ -270,28 +292,40 @@ int main(void)
 	// Bucle principal: encender LEDs en secuencia
 	// ========================================
 	// LEDs en PA0-PA12 y PA15 (14 LEDs totales)
-	const uint16_t led_pins[14] = {
-		7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15
-	};
-	
-	uint8_t led_index = 0;
-	
-	for(;;) {
-		// Apagar todos los LEDs
-		DEVMAP->GPIOs[GPIOA].REGs.ODR = 0x0000;
-		
-		// Encender LED actual
-		DEVMAP->GPIOs[GPIOA].REGs.ODR |= (1 << led_pins[led_index]);
-		
-		// Delay simple (~100ms a 72MHz)
-		for (volatile uint32_t i = 0; i < 720000; i++);
-		
-		// Avanzar al siguiente LED (cíclico)
-		led_index++;
-		if (led_index >= 14) {
-			led_index = 0;
-		}
-	}
-	
-	return 0;
+        const uint16_t led_pins[14] = {
+                7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15
+        };
+
+        uint8_t led_index = 0;
+        const uint32_t threshold_mv = 1600;
+
+        // Preparar estado inicial del comparador de umbral
+        uint16_t initial_sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
+        uint32_t initial_voltage_mv = (initial_sample * 3300U) / 4095U;
+        uint8_t above_threshold = (initial_voltage_mv >= threshold_mv);
+
+        // Mostrar primer LED encendido
+        DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
+
+        for(;;) {
+                uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
+                uint32_t voltage_mv = (sample * 3300U) / 4095U;
+                uint8_t current_above = (voltage_mv >= threshold_mv);
+
+                // Detectar flanco descendente: de sobre 1.6V a bajo 1.6V
+                if (!current_above && above_threshold) {
+                        led_index++;
+                        if (led_index >= 14) {
+                                led_index = 0;
+                        }
+
+                        // Actualizar LEDs según índice actual
+                        DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
+                }
+
+                // Solo aceptar un nuevo pulso bajo tras volver a subir
+                above_threshold = current_above;
+        }
+
+        return 0;
 }
