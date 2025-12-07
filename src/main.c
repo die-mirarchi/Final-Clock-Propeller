@@ -283,13 +283,13 @@ int main(void)
         while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 3));
         DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 2);             // Calibración
         while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 2));
-        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 0);             // Confirmar que el ADC queda encendido tras calibrar
 
         // Seleccionar disparo por software y arrancar la primera conversión
         DEVMAP->ADC[ADC1].REGs.CR2 &= ~(0b111 << 17);        // EXTSEL = 111 (SWSTART)
         DEVMAP->ADC[ADC1].REGs.CR2 |=  (0b111 << 17);
         DEVMAP->ADC[ADC1].REGs.CR2 |=  (1 << 20);            // EXTTRIG: habilita SWSTART
-        DEVMAP->ADC[ADC1].REGs.CR2 |=  (1 << 22);            // SWSTART
+        DEVMAP->ADC[ADC1].REGs.CR2 |=  (1 << 0);             // Confirmar que el ADC queda encendido tras calibrar
+        DEVMAP->ADC[ADC1].REGs.CR2 |=  (1 << 22);            // SWSTART: arranque explícito de la primera conversión
 
         // ========================================
         // Configurar PA[15:0] como salidas 50MHz push-pull
@@ -311,6 +311,12 @@ int main(void)
         const uint32_t threshold_mv = 1600;
 
         // Preparar estado inicial del comparador de umbral
+        // Descartar la primera muestra tras el arranque para evitar lecturas iniciales incorrectas
+        while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
+        (void)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
+
+        // Preparar estado inicial del comparador de umbral con la siguiente conversión válida
+        while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
         uint16_t initial_sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
         uint32_t initial_voltage_mv = (initial_sample * 3300U) / 4095U;
         uint8_t above_threshold = (initial_voltage_mv >= threshold_mv);
@@ -319,6 +325,7 @@ int main(void)
         DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
 
         for(;;) {
+                while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
                 uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
                 uint32_t voltage_mv = (sample * 3300U) / 4095U;
                 uint8_t current_above = (voltage_mv >= threshold_mv);
