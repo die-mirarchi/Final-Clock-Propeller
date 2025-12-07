@@ -87,25 +87,25 @@ struct {
 		page reserved;
 	} GPIOs[5];
 	word_t reserved7[(0x40012400-0x40011C00)/sizeof(word_t)];
-	union {
-		struct {
-			uint32_t SR;
-			uint32_t CR1;
-			uint32_t CR2;
-			uint32_t SMPR1;
-			uint32_t SMPR2;
-			uint32_t JOFR;
-			uint32_t HTR;
-			uint32_t LTR;
-			uint32_t SQR1;
-			uint32_t SQR2;
-			uint32_t SQR3;
-			uint32_t JSQR;
-			uint32_t JDR;
-			uint32_t DR;
-		} REGs;
-		page reserved;
-	} ADC[2];
+union {
+    struct {
+        uint32_t SR;
+        uint32_t CR1;
+        uint32_t CR2;
+        uint32_t SMPR1;
+        uint32_t SMPR2;
+        uint32_t JOFR[4];   // JOFR1..4
+        uint32_t HTR;
+        uint32_t LTR;
+        uint32_t SQR1;
+        uint32_t SQR2;
+        uint32_t SQR3;
+        uint32_t JSQR;
+        uint32_t JDR[4];    // JDR1..4
+        uint32_t DR;
+    } REGs;
+    page reserved;
+} ADC[2];
 	page TIM1;
 	page SPI1;
 	word_t reserved8[(0x40013800-0x40013400)/sizeof(word_t)];
@@ -326,11 +326,16 @@ int main(void)
         DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
 
         for(;;) {
+                // Esperar nueva conversión (EOC se pone en 1)
                 while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
+                
+                // Leer DR (esto automáticamente limpia EOC en modo continuo)
                 uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
                 uint32_t voltage_mv = (sample * 3300U) / 4095U;
                 uint8_t current_above = (voltage_mv >= threshold_mv);
-				 DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[sample%14]); //Para testear ADC
+                
+                // Para testear ADC: mostrar valor en LEDs
+                DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[sample%14]);
                 // Detectar flanco descendente: de sobre 1.6V a bajo 1.6V
 				/*
                 if (!current_above && above_threshold) {
