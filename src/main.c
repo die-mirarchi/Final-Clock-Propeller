@@ -272,24 +272,25 @@ int main(void)
         DEVMAP->RCC.REGs.CFGR &= ~(0b11 << 14);
         DEVMAP->RCC.REGs.CFGR |=  (0b10 << 14);             // ADCPRE = 10: PCLK2/6
 
-        // Secuencia de calibración y arranque
+        // Configurar ADC primero, ANTES de encender
         DEVMAP->ADC[ADC1].REGs.SMPR2 &= ~(0b111 << (3 * 9));
-        DEVMAP->ADC[ADC1].REGs.SMPR2 |=  (0b110 << (3 * 9)); // Sample time alto para estabilidad
-        DEVMAP->ADC[ADC1].REGs.SQR1 &= ~(0b1111 << 20);       // Longitud de secuencia = 1
-        DEVMAP->ADC[ADC1].REGs.SQR3  = 9;                    // Canal 9 como primera conversión
-        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 1);             // Modo continuo
-        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 0);             // Encender ADC
-        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 3);             // Reset calibration
-        while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 3));
-        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 2);             // Calibración
-        while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 2));
-
-        // Seleccionar disparo por software y arrancar la primera conversión
-        DEVMAP->ADC[ADC1].REGs.CR2 &= ~(0b111 << 17);        // EXTSEL = 111 (SWSTART)
-        DEVMAP->ADC[ADC1].REGs.CR2 |=  (0b111 << 17);
-        DEVMAP->ADC[ADC1].REGs.CR2 |=  (1 << 20);            // EXTTRIG: habilita SWSTART
-        DEVMAP->ADC[ADC1].REGs.CR2 |=  (1 << 0);             // Confirmar que el ADC queda encendido tras calibrar
-        DEVMAP->ADC[ADC1].REGs.CR2 |=  (1 << 22);            // SWSTART: arranque explícito de la primera conversión
+        DEVMAP->ADC[ADC1].REGs.SMPR2 |=  (0b111 << (3 * 9)); // Sample time = 239.5 ciclos
+        DEVMAP->ADC[ADC1].REGs.SQR1 &= ~(0b1111 << 20);      // Longitud de secuencia = 1
+        DEVMAP->ADC[ADC1].REGs.SQR3  = 9;                    // Canal 9 (PB1) como primera conversión
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 1);             // Modo continuo habilitado
+        
+        // Ahora encender y calibrar
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 0);             // ADON: Encender ADC (primera vez)
+        for(volatile int i=0; i<1000; i++);                  // Delay para estabilización
+        
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 3);             // RSTCAL: Reset calibration
+        while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 3));       // Esperar que se complete reset
+        
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 2);             // CAL: Iniciar calibración
+        while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 2));       // Esperar que se complete calibración
+        
+        // Segunda escritura a ADON inicia la conversión en modo continuo
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 0);             // ADON: Iniciar conversión continua
 
         // ========================================
         // Configurar PA[15:0] como salidas 50MHz push-pull
@@ -329,8 +330,9 @@ int main(void)
                 uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
                 uint32_t voltage_mv = (sample * 3300U) / 4095U;
                 uint8_t current_above = (voltage_mv >= threshold_mv);
-
+				 DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[sample%14]); //Para testear ADC
                 // Detectar flanco descendente: de sobre 1.6V a bajo 1.6V
+				/*
                 if (!current_above && above_threshold) {
                         led_index++;
                         if (led_index >= 14) {
@@ -340,9 +342,9 @@ int main(void)
                         // Actualizar LEDs según índice actual
                         DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
                 }
-
+				*/
                 // Solo aceptar un nuevo pulso bajo tras volver a subir
-                above_threshold = current_above;
+                //above_threshold = current_above;
         }
 
         return 0;
