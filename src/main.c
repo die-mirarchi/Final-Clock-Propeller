@@ -238,7 +238,7 @@ int main(void)
 	while (!(DEVMAP->RCC.REGs.CR & (1 << 25)));    // Esperar PLL ready
 	
 	DEVMAP->FLASH.REGs.ACR |= (0b010 << 0);        // FLASH: 2 wait states
-	DEVMAP->RCC.REGs.CFGR |= (0b100 << 8);         // APB1: /2 (36MHz)
+        DEVMAP->RCC.REGs.CFGR |= (0b100 << 8);         // APB1: /2 (36MHz)
 	
 	DEVMAP->RCC.REGs.CFGR |= (0b10 << 0);          // SW = PLL
 	while (!(DEVMAP->RCC.REGs.CFGR & (0b10 << 2))); // Esperar conmutación
@@ -268,7 +268,13 @@ int main(void)
         // ========================================
         // Configurar ADC1 para lecturas continuas en canal 9 (PB1)
         // ========================================
-        DEVMAP->ADC[ADC1].REGs.SMPR2 |= (0b110 << (3 * 9));  // Sample time alto para estabilidad
+        // El ADC1 necesita un reloj máximo de 14MHz, así que dividimos PCLK2 (72MHz) / 6 = 12MHz
+        DEVMAP->RCC.REGs.CFGR &= ~(0b11 << 14);
+        DEVMAP->RCC.REGs.CFGR |=  (0b10 << 14);             // ADCPRE = 10: PCLK2/6
+
+        // Secuencia de calibración y arranque
+        DEVMAP->ADC[ADC1].REGs.SMPR2 &= ~(0b111 << (3 * 9));
+        DEVMAP->ADC[ADC1].REGs.SMPR2 |=  (0b110 << (3 * 9)); // Sample time alto para estabilidad
         DEVMAP->ADC[ADC1].REGs.SQR1 &= ~(0b1111 << 20);       // Longitud de secuencia = 1
         DEVMAP->ADC[ADC1].REGs.SQR3  = 9;                    // Canal 9 como primera conversión
         DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 1);             // Modo continuo
@@ -277,8 +283,13 @@ int main(void)
         while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 3));
         DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 2);             // Calibración
         while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 2));
-        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 20);            // Habilitar disparo por software
-        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 22);            // Iniciar conversiones continuas
+        DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 0);             // Confirmar que el ADC queda encendido tras calibrar
+
+        // Seleccionar disparo por software y arrancar la primera conversión
+        DEVMAP->ADC[ADC1].REGs.CR2 &= ~(0b111 << 17);        // EXTSEL = 111 (SWSTART)
+        DEVMAP->ADC[ADC1].REGs.CR2 |=  (0b111 << 17);
+        DEVMAP->ADC[ADC1].REGs.CR2 |=  (1 << 20);            // EXTTRIG: habilita SWSTART
+        DEVMAP->ADC[ADC1].REGs.CR2 |=  (1 << 22);            // SWSTART
 
         // ========================================
         // Configurar PA[15:0] como salidas 50MHz push-pull
