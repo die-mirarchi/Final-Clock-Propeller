@@ -309,7 +309,8 @@ int main(void)
         };
 
         uint8_t led_index = 0;
-        const uint32_t threshold_mv = 1600;
+        const uint32_t falling_threshold_mv = 900;
+        const uint32_t rising_threshold_mv = 1600;
 
         // Preparar estado inicial del comparador de umbral
         // Descartar la primera muestra tras el arranque para evitar lecturas iniciales incorrectas
@@ -320,7 +321,7 @@ int main(void)
         while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
         uint16_t initial_sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
         uint32_t initial_voltage_mv = (initial_sample * 3300U) / 4095U;
-        uint8_t above_threshold = (initial_voltage_mv >= threshold_mv);
+        uint8_t low_detected = (initial_voltage_mv < falling_threshold_mv);
 
         // Mostrar primer LED encendido
         DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
@@ -332,24 +333,20 @@ int main(void)
                 // Leer DR (esto automáticamente limpia EOC en modo continuo)
                 uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
                 uint32_t voltage_mv = (sample * 3300U) / 4095U;
-                uint8_t current_above = (voltage_mv >= threshold_mv);
-                
-                // Para testear ADC: mostrar valor en LEDs
-                DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[sample%14]);
-                // Detectar flanco descendente: de sobre 1.6V a bajo 1.6V
-				/*
-                if (!current_above && above_threshold) {
+
+                if (!low_detected && (voltage_mv < falling_threshold_mv)) {
+                        low_detected = 1;
+                }
+
+                if (low_detected && (voltage_mv >= rising_threshold_mv)) {
                         led_index++;
                         if (led_index >= 14) {
                                 led_index = 0;
                         }
 
-                        // Actualizar LEDs según índice actual
                         DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
+                        low_detected = 0;
                 }
-				*/
-                // Solo aceptar un nuevo pulso bajo tras volver a subir
-                //above_threshold = current_above;
         }
 
         return 0;
