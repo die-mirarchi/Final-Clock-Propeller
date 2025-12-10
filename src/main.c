@@ -8,6 +8,7 @@ typedef char		   int8_t;
 typedef unsigned int   uint32_t;
 typedef unsigned short uint16_t;
 typedef unsigned char  uint8_t;
+typedef unsigned long long uint64_t;
 
 typedef void(*interrupt_t)(void);
 
@@ -215,11 +216,26 @@ enum IRQs {
 	IRQ_EXTI15_10 = 40,
 };
 
+static const uint32_t falling_threshold_mv = 900;
+static const uint32_t rising_threshold_mv  = 1600;
+
+static volatile uint8_t	led_index = 0;
+static volatile uint8_t	low_detected = 0;
+static volatile uint32_t last_capture_ticks = 0;
+static volatile uint32_t delta_ticks = 0;
+static volatile uint32_t rpm_times100 = 0;
+static volatile uint32_t angular_velocity_mrad_s = 0;
+static const uint16_t led_pins[14] = {
+	7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15
+};
+
+void ADC1_2_IRQHandler(void);
 int  main(void);
 
 const interrupt_t vector_table[] __attribute__ ((section(".vtab"))) = {
 	STACKINIT,												// 0x0000_0000 Stack Pointer
 	(interrupt_t) main,										// 0x0000_0004 Reset
+	[16 + IRQ_ADC1_2] = (interrupt_t) ADC1_2_IRQHandler,
 };
 
 
@@ -246,6 +262,7 @@ int main(void)
         // ========================================
         // Habilitar relojes periféricos
         // ========================================
+        DEVMAP->RCC.REGs.APB1ENR |= (1 << 0);  // TIM2 clock enable
         DEVMAP->RCC.REGs.APB2ENR |= (1 << 2);  // GPIOA clock enable
         DEVMAP->RCC.REGs.APB2ENR |= (1 << 3);  // GPIOB clock enable
         DEVMAP->RCC.REGs.APB2ENR |= (1 << 9);  // ADC1 clock enable
@@ -264,6 +281,15 @@ int main(void)
         // Configurar PB1 como entrada analógica (ADC1_IN9)
         // ========================================
         DEVMAP->GPIOs[GPIOB].REGs.CRL &= ~((uint32_t)0xF << 4);
+
+        // ========================================
+        // Configurar TIM2 como contador libre para time-stamping
+        // ========================================
+        DEVMAP->TIMs[TIM2].REGs.CR1 = 0;
+        DEVMAP->TIMs[TIM2].REGs.PSC = 72 - 1;                        // 72MHz / 72 = 1MHz
+        DEVMAP->TIMs[TIM2].REGs.ARR = 0xFFFFFFFF;            // Conteo libre de 32 bits
+        DEVMAP->TIMs[TIM2].REGs.CNT = 0;
+        DEVMAP->TIMs[TIM2].REGs.CR1 |= (1 << 0);             // CEN: habilitar contador
 
         // ========================================
         // Configurar ADC1 para lecturas continuas en canal 9 (PB1)
@@ -300,18 +326,9 @@ int main(void)
 	DEVMAP->GPIOs[GPIOA].REGs.CRL = 0x33333333;  // PA[7:0]  como salidas
 	DEVMAP->GPIOs[GPIOA].REGs.CRH = 0x33333333;  // PA[15:8] como salidas
 	
-	// ========================================
-	// Bucle principal: encender LEDs en secuencia
-	// ========================================
-	// LEDs en PA0-PA12 y PA15 (14 LEDs totales)
-        const uint16_t led_pins[14] = {
-                7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15
-        };
-
-        uint8_t led_index = 0;
-        const uint32_t falling_threshold_mv = 900;
-        const uint32_t rising_threshold_mv = 1600;
-
+        // ========================================
+        // Bucle principal: encender LEDs en secuencia
+        // ========================================
         // Preparar estado inicial del comparador de umbral
         // Descartar la primera muestra tras el arranque para evitar lecturas iniciales incorrectas
         while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
@@ -321,33 +338,53 @@ int main(void)
         while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
         uint16_t initial_sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
         uint32_t initial_voltage_mv = (initial_sample * 3300U) / 4095U;
-        uint8_t low_detected = (initial_voltage_mv < falling_threshold_mv);
+        low_detected = (initial_voltage_mv < falling_threshold_mv);
 
         // Mostrar primer LED encendido
         DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
 
+        // Habilitar interrupción de fin de conversión
+        DEVMAP->ADC[ADC1].REGs.CR1 |= (1 << 5);             // EOCIE
+        ENA_IRQ(IRQ_ADC1_2);
+
+        __asm__ volatile ("cpsie i");
+
         for(;;) {
-                // Esperar nueva conversión (EOC se pone en 1)
-                while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
-                
-                // Leer DR (esto automáticamente limpia EOC en modo continuo)
-                uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
-                uint32_t voltage_mv = (sample * 3300U) / 4095U;
-
-                if (!low_detected && (voltage_mv < falling_threshold_mv)) {
-                        low_detected = 1;
-                }
-
-                if (low_detected && (voltage_mv >= rising_threshold_mv)) {
-                        led_index++;
-                        if (led_index >= 14) {
-                                led_index = 0;
-                        }
-
-                        DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
-                        low_detected = 0;
-                }
+                // Espacio para lógica adicional que utilice rpm_times100 o angular_velocity_mrad_s
+                // El avance de LEDs y cálculo de velocidad se manejan en ADC1_2_IRQHandler.
         }
 
         return 0;
+}
+
+void ADC1_2_IRQHandler(void)
+{
+        // Leer DR (esto automáticamente limpia EOC en modo continuo)
+        uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
+        uint32_t voltage_mv = (sample * 3300U) / 4095U;
+
+        if (!low_detected && (voltage_mv < falling_threshold_mv)) {
+                low_detected = 1;
+        }
+
+        if (low_detected && (voltage_mv >= rising_threshold_mv)) {
+                uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
+                uint32_t delta = current_ticks - last_capture_ticks;
+                last_capture_ticks = current_ticks;
+                delta_ticks = delta;
+
+                if (delta != 0U) {
+                        uint64_t scaled_rpm = 6000000000ULL / delta;               // 60e6 * 100 / delta_ticks
+                        rpm_times100 = (uint32_t)scaled_rpm;                       // RPM con resolución de 0.01
+                        angular_velocity_mrad_s = (uint32_t)((rpm_times100 * 1047U) / 1000U); // mrad/s
+                }
+
+                led_index++;
+                if (led_index >= 14) {
+                        led_index = 0;
+                }
+
+                DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
+                low_detected = 0;
+        }
 }
