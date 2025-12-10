@@ -5,16 +5,30 @@ def bmp_to_led_pattern(image_path):
     """
     Convierte una imagen BMP de 14x180 a un vector de uint16_t para C.
 
-    Cada columna (180 total) es un elemento del vector.
-    Cada fila (14 total) es un bit del elemento:
-    - Fila 0 (superior) -> bit 0
-    - Fila 1 -> bit 1
-    - ...
-    - Fila 13 -> bit 13
+    Mapeo de filas a pines físicos de GPIOA:
+    - Fila 0 (superior) -> led_pins[0] = PA7  -> bit 7 del ODR
+    - Fila 1            -> led_pins[1] = PA6  -> bit 6 del ODR
+    - Fila 2            -> led_pins[2] = PA5  -> bit 5 del ODR
+    - Fila 3            -> led_pins[3] = PA4  -> bit 4 del ODR
+    - Fila 4            -> led_pins[4] = PA3  -> bit 3 del ODR
+    - Fila 5            -> led_pins[5] = PA2  -> bit 2 del ODR
+    - Fila 6            -> led_pins[6] = PA1  -> bit 1 del ODR
+    - Fila 7            -> led_pins[7] = PA0  -> bit 0 del ODR
+    - Fila 8            -> led_pins[8] = PA8  -> bit 8 del ODR
+    - Fila 9            -> led_pins[9] = PA9  -> bit 9 del ODR
+    - Fila 10           -> led_pins[10] = PA10 -> bit 10 del ODR
+    - Fila 11           -> led_pins[11] = PA11 -> bit 11 del ODR
+    - Fila 12           -> led_pins[12] = PA12 -> bit 12 del ODR
+    - Fila 13 (inferior)-> led_pins[13] = PA15 -> bit 15 del ODR
 
-    Pixel blanco/claro = bit en 1 (LED encendido)
-    Pixel negro/oscuro = bit en 0 (LED apagado)
+    Cada columna (180 total) es un elemento del vector.
+    Pixel negro (oscuro) = bit en 1 (LED encendido)
+    Pixel blanco (claro) = bit en 0 (LED apagado)
     """
+
+    # Array de mapeo: led_pins[i] indica el bit del ODR para la fila i
+    led_pins = [7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15]
+
     try:
         img = Image.open(image_path)
 
@@ -31,13 +45,15 @@ def bmp_to_led_pattern(image_path):
         # Generar el vector
         pattern = []
 
-        for col in range(180):  # 180 columnas
+        for col in range(180):  # 180 columnas (ángulos)
             value = 0
-            for row in range(14):  # 14 filas (bits)
-                # Leer pixel: si es claro (>128) -> bit = 1
+            for row in range(14):  # 14 filas (LEDs)
+                # Leer pixel: si es OSCURO (<128) -> bit = 1 (LED encendido)
                 pixel_value = pixels[col, row]
-                if pixel_value < 128:  # Umbral para blanco
-                    value |= 1 << row  # Bit 'row' en 1
+                if pixel_value < 128:  # Umbral para negro
+                    # Mapear fila de imagen -> bit del ODR según led_pins[]
+                    odr_bit = led_pins[row]
+                    value |= 1 << odr_bit
 
             pattern.append(value)
 
@@ -53,6 +69,12 @@ def bmp_to_led_pattern(image_path):
                 print(f"\t{formatted}")
 
         print("};")
+
+        # Información adicional
+        print(f"\n// Total de patrones generados: {len(pattern)}")
+        print(f"// Cada patrón representa una columna de la imagen (posición angular)")
+        print(f"// Bits encendidos (1) = LEDs encendidos (píxeles negros en la imagen)")
+        print(f"// Ejemplo: 0x8080 = bits 7 y 15 activos = PA7 y PA15 encendidos")
 
     except FileNotFoundError:
         print(f"Error: No se encontró el archivo '{image_path}'")

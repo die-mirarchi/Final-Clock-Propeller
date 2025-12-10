@@ -216,58 +216,72 @@ enum IRQs {
 	IRQ_EXTI15_10 = 40,
 };
 
-static const uint32_t falling_threshold_mv = 900;
-static const uint32_t rising_threshold_mv  = 1600;
+static const uint32_t falling_threshold_mv = 1250;
+static const uint32_t rising_threshold_mv  = 1500;
 
 static volatile uint8_t	led_index = 0;
 static volatile uint8_t	low_detected = 0;
 static volatile uint32_t last_capture_ticks = 0;
 static volatile uint32_t delta_ticks = 1;
-static volatile uint32_t rpm_times100 = 0;
-static volatile uint32_t angular_velocity_mrad_s = 0;
-static volatile uint8_t delta_ticks_valid = 0;
-static const uint16_t led_pins[14] = {
+/*static const uint16_t led_pins[14] = {
 	7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15
 };
+*/
+/*
 static const uint16_t led_pattern[180] = {
-        0x2001, 0x2001, 0x2001, 0x2001, 0x3FFF, 0x3003, 0x3003, 0x3003,
-        0x3003, 0x2805, 0x27F9, 0x2001, 0x2001, 0x3FF7, 0x2001, 0x2001,
-        0x27F9, 0x2805, 0x3003, 0x3103, 0x3103, 0x2903, 0x2705, 0x2001,
-        0x2001, 0x3FF7, 0x2001, 0x2001, 0x2003, 0x2003, 0x2003, 0x3FFF,
-        0x2003, 0x2003, 0x2003, 0x2001, 0x2001, 0x3C01, 0x2381, 0x2279,
-        0x2207, 0x2279, 0x2381, 0x3C01, 0x2001, 0x2001, 0x3FFF, 0x3001,
-        0x3001, 0x3001, 0x3001, 0x3001, 0x2001, 0x2001, 0x3FFF, 0x3043,
-        0x3043, 0x3003, 0x3003, 0x3003, 0x2001, 0x2001, 0x2839, 0x3045,
-        0x3043, 0x3083, 0x3083, 0x3083, 0x2F05, 0x2001, 0x2001, 0x2001,
-        0x3003, 0x3003, 0x3FFF, 0x3003, 0x3003, 0x2001, 0x2001, 0x3003,
-        0x3003, 0x3FFF, 0x3003, 0x3003, 0x2001, 0x2001, 0x2001, 0x0000,
-        0x0000, 0x0000, 0x2041, 0x2041, 0x20A1, 0x20A1, 0x2111, 0x2111,
-        0x2209, 0x2209, 0x2405, 0x2405, 0x3803, 0x3803, 0x2405, 0x2405,
-        0x2209, 0x2209, 0x2111, 0x2111, 0x20A1, 0x20A1, 0x2041, 0x2041,
-        0x0000, 0x0000, 0x2001, 0x2001, 0x2001, 0x3FFF, 0x2005, 0x2009,
-        0x2011, 0x2009, 0x2005, 0x3FFF, 0x2001, 0x2001, 0x3FF7, 0x2001,
-        0x2001, 0x3FFF, 0x2083, 0x2183, 0x2283, 0x2443, 0x383D, 0x2001,
-        0x2001, 0x3C01, 0x2381, 0x2271, 0x221D, 0x2203, 0x221D, 0x2271,
-        0x2381, 0x3C01, 0x2001, 0x2001, 0x3FFF, 0x2083, 0x2183, 0x2283,
-        0x2443, 0x383D, 0x2001, 0x2001, 0x27F9, 0x2805, 0x3003, 0x3003,
-        0x3003, 0x3003, 0x2001, 0x2001, 0x3FFF, 0x2101, 0x2101, 0x2101,
-        0x2101, 0x2101, 0x3FFF, 0x2001, 0x2001, 0x3FF7, 0x2001, 0x2001,
-        0x2001, 0x2001, 0x2001, 0x2001
+        0x8080, 0x8080, 0x8080, 0x8080, 0x9FFF, 0x90C0, 0x90C0, 0x90C0,
+        0x90C0, 0x88A0, 0x879F, 0x8080, 0x8080, 0x9FEF, 0x8080, 0x8080,
+        0x879F, 0x88A0, 0x90C0, 0x91C0, 0x91C0, 0x89C0, 0x87A0, 0x8080,
+        0x8080, 0x9FEF, 0x8080, 0x8080, 0x80C0, 0x80C0, 0x80C0, 0x9FFF,
+        0x80C0, 0x80C0, 0x80C0, 0x8080, 0x8080, 0x9C80, 0x8381, 0x829E,
+        0x82E0, 0x829E, 0x8381, 0x9C80, 0x8080, 0x8080, 0x9FFF, 0x9080,
+        0x9080, 0x9080, 0x9080, 0x9080, 0x8080, 0x8080, 0x9FFF, 0x90C2,
+        0x90C2, 0x90C0, 0x90C0, 0x90C0, 0x8080, 0x8080, 0x889C, 0x90A2,
+        0x90C2, 0x90C1, 0x90C1, 0x90C1, 0x8FA0, 0x8080, 0x8080, 0x8080,
+        0x90C0, 0x90C0, 0x9FFF, 0x90C0, 0x90C0, 0x8080, 0x8080, 0x90C0,
+        0x90C0, 0x9FFF, 0x90C0, 0x90C0, 0x8080, 0x8080, 0x8080, 0x0000,
+        0x0000, 0x0000, 0x8082, 0x8082, 0x8085, 0x8085, 0x8188, 0x8188,
+        0x8290, 0x8290, 0x84A0, 0x84A0, 0x98C0, 0x98C0, 0x84A0, 0x84A0,
+        0x8290, 0x8290, 0x8188, 0x8188, 0x8085, 0x8085, 0x8082, 0x8082,
+        0x0000, 0x0000, 0x8080, 0x8080, 0x8080, 0x9FFF, 0x80A0, 0x8090,
+        0x8088, 0x8090, 0x80A0, 0x9FFF, 0x8080, 0x8080, 0x9FEF, 0x8080,
+        0x8080, 0x9FFF, 0x80C1, 0x81C1, 0x82C1, 0x84C2, 0x98BC, 0x8080,
+        0x8080, 0x9C80, 0x8381, 0x828E, 0x82B8, 0x82C0, 0x82B8, 0x828E,
+        0x8381, 0x9C80, 0x8080, 0x8080, 0x9FFF, 0x80C1, 0x81C1, 0x82C1,
+        0x84C2, 0x98BC, 0x8080, 0x8080, 0x879F, 0x88A0, 0x90C0, 0x90C0,
+        0x90C0, 0x90C0, 0x8080, 0x8080, 0x9FFF, 0x8180, 0x8180, 0x8180,
+        0x8180, 0x8180, 0x9FFF, 0x8080, 0x8080, 0x9FEF, 0x8080, 0x8080,
+        0x8080, 0x8080, 0x8080, 0x8080
+};
+*/
+static const uint16_t led_pattern[180] = {
+        0x8080, 0x8080, 0x8080, 0x8080, 0x9FFF, 0x90C0, 0x90C0, 0x90C0,
+        0x90C0, 0x88A0, 0x879F, 0x8080, 0x8080, 0x9FEF, 0x8080, 0x8080,
+        0x879F, 0x88A0, 0x90C0, 0x91C0, 0x91C0, 0x89C0, 0x87A0, 0x8080,
+        0x8080, 0x9FEF, 0x8080, 0x8080, 0x80C0, 0x80C0, 0x80C0, 0x9FFF,
+        0x80C0, 0x80C0, 0x80C0, 0x8080, 0x8080, 0x9C80, 0x8381, 0x829E,
+        0x82E0, 0x829E, 0x8381, 0x9C80, 0x8080, 0x8080, 0x9FFF, 0x9080,
+        0x9080, 0x9080, 0x9080, 0x9080, 0x8080, 0x8080, 0x9FFF, 0x90C2,
+        0x90C2, 0x90C0, 0x90C0, 0x90C0, 0x8080, 0x8080, 0x889C, 0x90A2,
+        0x90C2, 0x90C1, 0x90C1, 0x90C1, 0x8FA0, 0x8080, 0x8080, 0x8080,
+        0x90C0, 0x90C0, 0x9FFF, 0x90C0, 0x90C0, 0x8080, 0x8080, 0x90C0,
+        0x90C0, 0x9FFF, 0x90C0, 0x90C0, 0x8080, 0x8080, 0x8080, 0x0000,
+        0x0000, 0x0000, 0x8082, 0x8082, 0x8085, 0x8085, 0x8188, 0x8188,
+        0x8290, 0x8290, 0x84A0, 0x84A0, 0x98C0, 0x98C0, 0x84A0, 0x84A0,
+        0x8290, 0x8290, 0x8188, 0x8188, 0x8085, 0x8085, 0x8082, 0x8082,
+        0x0000, 0x0000, 0x8080, 0x8080, 0x8080, 0x9FFF, 0x80A0, 0x8090,
+        0x8088, 0x8090, 0x80A0, 0x9FFF, 0x8080, 0x8080, 0x9FEF, 0x8080,
+        0x8080, 0x9FFF, 0x80C1, 0x81C1, 0x82C1, 0x84C2, 0x98BC, 0x8080,
+        0x8080, 0x9C80, 0x8381, 0x828E, 0x82B8, 0x82C0, 0x82B8, 0x828E,
+        0x8381, 0x9C80, 0x8080, 0x8080, 0x9FFF, 0x80C1, 0x81C1, 0x82C1,
+        0x84C2, 0x98BC, 0x8080, 0x8080, 0x879F, 0x88A0, 0x90C0, 0x90C0,
+        0x90C0, 0x90C0, 0x8080, 0x8080, 0x9FFF, 0x8180, 0x8180, 0x8180,
+        0x8180, 0x8180, 0x9FFF, 0x8080, 0x8080, 0x9FEF, 0x8080, 0x8080,
+        0x8080, 0x8080, 0x8080, 0x8080
 };
 // Establece el registro ODR de GPIOA a partir de una máscara de 16 bits
 // El bit 0 de `mask` corresponde a `led_pins[0]` (pin 7), bit 1 a `led_pins[1]`, etc.
-static void set_gpioa_odr_from_mask(uint16_t mask)
-{
-	uint32_t odr = 0;
-	for (int i = 0; i < 16; ++i) {
-		if (mask & (1u << i)) {
-			if (i < (int)(sizeof(led_pins) / sizeof(led_pins[0]))) {
-				odr |= (1u << led_pins[i]);
-			}
-		}
-	}
-	DEVMAP->GPIOs[GPIOA].REGs.ODR = odr;
-}
+
 
 void ADC1_2_IRQHandler(void);
 int  main(void);
@@ -275,7 +289,60 @@ int  main(void);
 const interrupt_t vector_table[] __attribute__ ((section(".vtab"))) = {
 	STACKINIT,												// 0x0000_0000 Stack Pointer
 	(interrupt_t) main,										// 0x0000_0004 Reset
-	[16 + IRQ_ADC1_2] = (interrupt_t) ADC1_2_IRQHandler,
+	0,														// 0x0000_0008
+	0,														// 0x0000_000C
+	0,														// 0x0000_0010
+	0,														// 0x0000_0014
+	0,														// 0x0000_0018
+	0,														// 0x0000_001C
+	0,														// 0x0000_0020
+	0,														// 0x0000_0024
+	0,														// 0x0000_0028
+	0,														// 0x0000_002C
+	0,														// 0x0000_0030
+	0,														// 0x0000_0034
+	0,														// 0x0000_0038
+	0,										// 0x0000_003C SYSTICK
+	0,														// 0x0000_0040
+	0,														// 0x0000_0044
+	0,														// 0x0000_0048
+	0,														// 0x0000_004C
+	0,														// 0x0000_0050
+	0,														// 0x0000_0054
+	0,														// 0x0000_0058
+	0,														// 0x0000_005C
+	0,														// 0x0000_0060
+	0,														// 0x0000_0064
+	0,														// 0x0000_0068
+	0,														// 0x0000_006C
+	0,														// 0x0000_0070
+	0,														// 0x0000_0074
+	0,														// 0x0000_0078
+	0,														// 0x0000_007C
+	0,														// 0x0000_0080
+	0,														// 0x0000_0084
+	ADC1_2_IRQHandler,										// 0x0000_0088
+	0,														// 0x0000_008C
+	0,														// 0x0000_0090
+	0,														// 0x0000_0094
+	0,														// 0x0000_0098
+	0,														// 0x0000_009C
+	0,														// 0x0000_00A0
+	0,														// 0x0000_00A4
+	0,														// 0x0000_00A8
+	0,														// 0x0000_00AC
+	0,														// 0x0000_00B0 TIM2
+	0,														// 0x0000_00B4
+	0,														// 0x0000_00B8
+	0,														// 0x0000_00BC
+	0,														// 0x0000_00C0
+	0,														// 0x0000_00C4
+	0,														// 0x0000_00C8
+	0,														// 0x0000_00CC
+	0,														// 0x0000_00D0
+	0,											// 0x0000_00D4 USART1
+	0,														// 0x0000_00D8
+	0,														// 0x0000_00DC
 };
 
 
@@ -326,8 +393,8 @@ int main(void)
         // Configurar TIM2 como contador libre para time-stamping
         // ========================================
         DEVMAP->TIMs[TIM2].REGs.CR1 = 0;
-        DEVMAP->TIMs[TIM2].REGs.PSC = 72 - 1;                        // 72MHz / 72 = 1MHz
-        DEVMAP->TIMs[TIM2].REGs.ARR = 0xFFFFFFFF;            // Conteo libre de 32 bits
+        DEVMAP->TIMs[TIM2].REGs.PSC = 2400 - 1;                        // 72MHz / 2400 = 30kHz -> 33.33us por tick
+        DEVMAP->TIMs[TIM2].REGs.ARR = 0xFFFF;            // Conteo libre de 32 bits
         DEVMAP->TIMs[TIM2].REGs.CNT = 0;
         DEVMAP->TIMs[TIM2].REGs.CR1 |= (1 << 0);             // CEN: habilitar contador
 
@@ -336,7 +403,7 @@ int main(void)
         // ========================================
         // El ADC1 necesita un reloj máximo de 14MHz, así que dividimos PCLK2 (72MHz) / 6 = 12MHz
         DEVMAP->RCC.REGs.CFGR &= ~(0b11 << 14);
-        DEVMAP->RCC.REGs.CFGR |=  (0b10 << 14);             // ADCPRE = 10: PCLK2/6
+        DEVMAP->RCC.REGs.CFGR |=  (0b11 << 14);             // ADCPRE = 10: PCLK2/6
 
         // Configurar ADC primero, ANTES de encender
         DEVMAP->ADC[ADC1].REGs.SMPR2 &= ~(0b111 << (3 * 9));
@@ -355,9 +422,14 @@ int main(void)
         DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 2);             // CAL: Iniciar calibración
         while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 2));       // Esperar que se complete calibración
         
+        // Arranque determinista de conversión continua por software
+        DEVMAP->ADC[ADC1].REGs.CR2 &= ~(0b111 << 17);        // EXTSEL = 111 (SWSTART)
+        DEVMAP->ADC[ADC1].REGs.CR2 |=  (0b111 << 17);
+        DEVMAP->ADC[ADC1].REGs.CR2 |= (1 << 20);             // EXTTRIG habilitado
+
         // Segunda escritura a ADON inicia la conversión en modo continuo
         DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 0);             // ADON: Iniciar conversión continua
-
+        DEVMAP->ADC[ADC1].REGs.CR2 |= (1 << 22);             // SWSTART: disparar conversión
         // ========================================
         // Configurar PA[15:0] como salidas 50MHz push-pull
         // ========================================
@@ -380,21 +452,15 @@ int main(void)
         uint32_t initial_voltage_mv = (initial_sample * 3300U) / 4095U;
         low_detected = (initial_voltage_mv < falling_threshold_mv);
 
-		// Mostrar primer LED encendido
-		set_gpioa_odr_from_mask(1u << led_index);
 
         // Habilitar interrupción de fin de conversión
         DEVMAP->ADC[ADC1].REGs.CR1 |= (1 << 5);             // EOCIE
         ENA_IRQ(IRQ_ADC1_2);
 
-        __asm__ volatile ("cpsie i");
 
         for(;;) {
-                // El avance de LEDs y cálculo de velocidad se maneja en ADC1_2_IRQHandler.
-                if (delta_ticks_valid) {
-                        uint32_t ticks_now = DEVMAP->TIMs[TIM2].REGs.CNT;
-                        set_gpioa_odr_from_mask(led_pattern[((ticks_now - last_capture_ticks) / delta_ticks) % 180]);
-                }
+            uint32_t ticks_now = DEVMAP->TIMs[TIM2].REGs.CNT;
+            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[((ticks_now - last_capture_ticks) / delta_ticks) % 180];
         }
 
         return 0;
@@ -404,22 +470,21 @@ void ADC1_2_IRQHandler(void)
 {
         // Leer DR (esto automáticamente limpia EOC en modo continuo)
         uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
-        uint32_t voltage_mv = (sample * 3300U) / 4095U;
 
-        if (!low_detected && (voltage_mv < falling_threshold_mv)) {
+        if (!low_detected && (sample < 1365)) {
                 low_detected = 1;
         }
 
-        if (low_detected && (voltage_mv >= rising_threshold_mv)) {
+        if (low_detected && (sample > 1870)) {
                 uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
                 uint32_t ticks_one_lap = current_ticks - last_capture_ticks;
                 last_capture_ticks = current_ticks;
-                uint32_t ticks_window = ticks_one_lap / 180; // Ventana de 2 grados
-                if (ticks_window == 0) {
-                        ticks_window = 1;
+                delta_ticks = ticks_one_lap / 180; // Ventana de 2 grados
+                if (delta_ticks == 0) {
+                        delta_ticks = 1;
                 }
-                delta_ticks = ticks_window;
-                delta_ticks_valid = 1;
                 low_detected = 0;
         }
+			DEVMAP->ADC[ADC1].REGs.SR &= ~(1 << 1);					// Clear EOC bit
+	CLR_IRQ(IRQ_ADC1_2);
 }
