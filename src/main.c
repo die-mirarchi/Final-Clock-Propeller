@@ -222,9 +222,10 @@ static const uint32_t rising_threshold_mv  = 1600;
 static volatile uint8_t	led_index = 0;
 static volatile uint8_t	low_detected = 0;
 static volatile uint32_t last_capture_ticks = 0;
-static volatile uint32_t delta_ticks = 0;
+static volatile uint32_t delta_ticks = 1;
 static volatile uint32_t rpm_times100 = 0;
 static volatile uint32_t angular_velocity_mrad_s = 0;
+static volatile uint8_t delta_ticks_valid = 0;
 static const uint16_t led_pins[14] = {
 	7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15
 };
@@ -390,11 +391,12 @@ int main(void)
 
         for(;;) {
                 // Espacio para lógica adicional que utilice rpm_times100 o angular_velocity_mrad_s
-                // El avance de LEDs y cálculo de velocidad se manejan en ADC1_2_IRQHandler.
-			uint32_t ticks_now = DEVMAP->TIMs[TIM2].REGs.CNT;
-			set_gpioa_odr_from_mask(led_pattern[((ticks_now-last_capture_ticks)/ delta_ticks) % 180]);
-
-		}	
+                // El avance de LEDs y cálculo de velocidad se maneja en ADC1_2_IRQHandler.
+                if (delta_ticks_valid) {
+                        uint32_t ticks_now = DEVMAP->TIMs[TIM2].REGs.CNT;
+                        set_gpioa_odr_from_mask(led_pattern[((ticks_now - last_capture_ticks) / delta_ticks) % 180]);
+                }
+        }
 
         return 0;
 }
@@ -413,8 +415,12 @@ void ADC1_2_IRQHandler(void)
                 uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
                 uint32_t ticks_one_lap = current_ticks - last_capture_ticks;
                 last_capture_ticks = current_ticks;
-				uint32_t ticks_window = ticks_one_lap/180; // Ventana de 2 grados
-				delta_ticks = ticks_window;
+                uint32_t ticks_window = ticks_one_lap / 180; // Ventana de 2 grados
+                if (ticks_window == 0) {
+                        ticks_window = 1;
+                }
+                delta_ticks = ticks_window;
+                delta_ticks_valid = 1;
                 low_detected = 0;
         }
 }
