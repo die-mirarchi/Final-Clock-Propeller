@@ -393,7 +393,8 @@ int main(void)
                 // El avance de LEDs y cálculo de velocidad se manejan en ADC1_2_IRQHandler.
 			uint32_t ticks_now = DEVMAP->TIMs[TIM2].REGs.CNT;
 			set_gpioa_odr_from_mask(led_pattern[((ticks_now-last_capture_ticks)/ delta_ticks) % 180]);
-		}
+
+		}	
 
         return 0;
 }
