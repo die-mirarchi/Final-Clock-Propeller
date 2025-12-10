@@ -228,6 +228,45 @@ static volatile uint32_t angular_velocity_mrad_s = 0;
 static const uint16_t led_pins[14] = {
 	7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15
 };
+static const uint16_t led_pattern[180] = {
+	0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
+	0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x8000, 0x4000, 0x2000,
+	0x1000, 0x0800, 0x0400, 0x0200, 0x0100, 0x0080, 0x0040, 0x0020,
+	0x0010, 0x0008, 0x0004,	0x0002, 0x0001, 0x0002, 0x0004, 0x0008,
+	0x0010, 0x0020, 0x0040, 0x0080, 0x0100, 0x0200, 0x0400, 0x0800,
+	0x1000, 0x8000, 0x4000, 0x2000, 0x1000, 0x0800, 0x0400, 0x0200,
+	0x0100, 0x0080, 0x0040, 0x0020, 0x0010, 0x0008, 0x0004,	0x0002,
+	0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
+	0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x8000, 0x4000, 0x2000,
+	0x1000, 0x0800, 0x0400,	0x0200, 0x0100, 0x0080, 0x0040, 0x0020,
+	0x0010, 0x0008, 0x0004, 0x0002, 0x0001, 0x0002, 0x0004, 0x0008,
+	0x0010, 0x0020, 0x0040,	0x0080, 0x0100, 0x0200, 0x0400, 0x0800,
+	0x1000, 0x8000, 0x4000, 0x2000, 0x1000, 0x0800, 0x0400, 0x0200,
+	0x0100, 0x0080, 0x0040, 0x0020, 0x0010, 0x0008, 0x0004,	0x0002,
+	0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
+	0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x8000, 0x4000, 0x2000,
+	0x1000, 0x0800, 0x0400, 0x0200, 0x0100, 0x0080, 0x0040, 0x0020,
+	0x0010, 0x0008, 0x0004,	0x0002, 0x0001, 0x0002, 0x0004, 0x0008,
+	0x0010, 0x0020, 0x0040, 0x0080, 0x0100, 0x0200, 0x0400, 0x0800,
+	0x1000, 0x8000, 0x4000, 0x2000, 0x1000, 0x0800, 0x0400, 0x0200,
+	0x0100, 0x0080, 0x0040, 0x0020, 0x0010, 0x0008, 0x0004,	0x0002,
+	0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
+	0x0100, 0x0200, 0x0400, 0x0800
+};
+// Establece el registro ODR de GPIOA a partir de una máscara de 16 bits
+// El bit 0 de `mask` corresponde a `led_pins[0]` (pin 7), bit 1 a `led_pins[1]`, etc.
+static void set_gpioa_odr_from_mask(uint16_t mask)
+{
+	uint32_t odr = 0;
+	for (int i = 0; i < 16; ++i) {
+		if (mask & (1u << i)) {
+			if (i < (int)(sizeof(led_pins) / sizeof(led_pins[0]))) {
+				odr |= (1u << led_pins[i]);
+			}
+		}
+	}
+	DEVMAP->GPIOs[GPIOA].REGs.ODR = odr;
+}
 
 void ADC1_2_IRQHandler(void);
 int  main(void);
@@ -340,8 +379,8 @@ int main(void)
         uint32_t initial_voltage_mv = (initial_sample * 3300U) / 4095U;
         low_detected = (initial_voltage_mv < falling_threshold_mv);
 
-        // Mostrar primer LED encendido
-        DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
+		// Mostrar primer LED encendido
+		set_gpioa_odr_from_mask(1u << led_index);
 
         // Habilitar interrupción de fin de conversión
         DEVMAP->ADC[ADC1].REGs.CR1 |= (1 << 5);             // EOCIE
@@ -352,7 +391,9 @@ int main(void)
         for(;;) {
                 // Espacio para lógica adicional que utilice rpm_times100 o angular_velocity_mrad_s
                 // El avance de LEDs y cálculo de velocidad se manejan en ADC1_2_IRQHandler.
-        }
+			uint32_t ticks_now = DEVMAP->TIMs[TIM2].REGs.CNT;
+			set_gpioa_odr_from_mask(led_pattern[((ticks_now-last_capture_ticks)/ delta_ticks) % 180]);
+		}
 
         return 0;
 }
@@ -369,22 +410,10 @@ void ADC1_2_IRQHandler(void)
 
         if (low_detected && (voltage_mv >= rising_threshold_mv)) {
                 uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
-                uint32_t delta = current_ticks - last_capture_ticks;
+                uint32_t ticks_one_lap = current_ticks - last_capture_ticks;
                 last_capture_ticks = current_ticks;
-                delta_ticks = delta;
-
-                if (delta != 0U) {
-                        uint64_t scaled_rpm = 6000000000ULL / delta;               // 60e6 * 100 / delta_ticks
-                        rpm_times100 = (uint32_t)scaled_rpm;                       // RPM con resolución de 0.01
-                        angular_velocity_mrad_s = (uint32_t)((rpm_times100 * 1047U) / 1000U); // mrad/s
-                }
-
-                led_index++;
-                if (led_index >= 14) {
-                        led_index = 0;
-                }
-
-                DEVMAP->GPIOs[GPIOA].REGs.ODR = (1 << led_pins[led_index]);
+				uint32_t ticks_window = ticks_one_lap/180; // Ventana de 2 grados
+				delta_ticks = ticks_window;
                 low_detected = 0;
         }
 }
