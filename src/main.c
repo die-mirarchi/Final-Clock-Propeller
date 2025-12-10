@@ -390,7 +390,6 @@ int main(void)
         __asm__ volatile ("cpsie i");
 
         for(;;) {
-                // Espacio para lógica adicional que utilice rpm_times100 o angular_velocity_mrad_s
                 // El avance de LEDs y cálculo de velocidad se maneja en ADC1_2_IRQHandler.
                 if (delta_ticks_valid) {
                         uint32_t ticks_now = DEVMAP->TIMs[TIM2].REGs.CNT;
