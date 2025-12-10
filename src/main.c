@@ -449,8 +449,7 @@ int main(void)
         // Preparar estado inicial del comparador de umbral con la siguiente conversión válida
         while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
         uint16_t initial_sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
-        uint32_t initial_voltage_mv = (initial_sample * 3300U) / 4095U;
-        low_detected = (initial_voltage_mv < falling_threshold_mv);
+        low_detected = (initial_sample < 1365);
 
 
         // Habilitar interrupción de fin de conversión
@@ -471,11 +470,11 @@ void ADC1_2_IRQHandler(void)
         // Leer DR (esto automáticamente limpia EOC en modo continuo)
         uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
 
-        if (!low_detected && (sample < 1365)) {
+        if (!low_detected && (sample < 1365)) { //1365 ~ 1100mV
                 low_detected = 1;
         }
 
-        if (low_detected && (sample > 1870)) {
+        if (low_detected && (sample > 1870)) { // 1870 ~ 1500mV
                 uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
                 uint32_t ticks_one_lap = current_ticks - last_capture_ticks;
                 last_capture_ticks = current_ticks;
