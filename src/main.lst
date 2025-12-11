@@ -7,38 +7,38 @@ start address 0x080000e1
 
 Program Header:
     LOAD off    0x00001000 vaddr 0x08000000 paddr 0x08000000 align 2**12
-         filesz 0x000005a4 memsz 0x000005a4 flags r-x
-    LOAD off    0x00002000 vaddr 0x20000000 paddr 0x080005a4 align 2**12
+         filesz 0x000005a0 memsz 0x000005a0 flags r-x
+    LOAD off    0x00002000 vaddr 0x20000000 paddr 0x080005a0 align 2**12
          filesz 0x0000001c memsz 0x00000028 flags rw-
 private flags = 0x5000200: [Version5 EABI] [soft-float ABI]
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         000005a4  08000000  08000000  00001000  2**2
+  0 .text         000005a0  08000000  08000000  00001000  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         0000001c  20000000  080005a4  00002000  2**2
+  1 .data         0000001c  20000000  080005a0  00002000  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .bss          0000000c  2000001c  080005c0  0000201c  2**2
+  2 .bss          0000000c  2000001c  080005bc  0000201c  2**2
                   ALLOC
   3 .debug_info   00000cb6  00000000  00000000  0000201c  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
   4 .debug_abbrev 00000248  00000000  00000000  00002cd2  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-  5 .debug_loclists 00000085  00000000  00000000  00002f1a  2**0
+  5 .debug_loclists 00000076  00000000  00000000  00002f1a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-  6 .debug_aranges 00000028  00000000  00000000  00002f9f  2**0
+  6 .debug_aranges 00000028  00000000  00000000  00002f90  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-  7 .debug_rnglists 0000001b  00000000  00000000  00002fc7  2**0
+  7 .debug_rnglists 0000001b  00000000  00000000  00002fb8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-  8 .debug_line   000004aa  00000000  00000000  00002fe2  2**0
+  8 .debug_line   000004a1  00000000  00000000  00002fd3  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-  9 .debug_str    000004d4  00000000  00000000  0000348c  2**0
+  9 .debug_str    000004d2  00000000  00000000  00003474  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 10 .comment      00000046  00000000  00000000  00003960  2**0
+ 10 .comment      00000046  00000000  00000000  00003946  2**0
                   CONTENTS, READONLY
- 11 .ARM.attributes 0000002d  00000000  00000000  000039a6  2**0
+ 11 .ARM.attributes 0000002d  00000000  00000000  0000398c  2**0
                   CONTENTS, READONLY
- 12 .debug_frame  00000058  00000000  00000000  000039d4  2**2
+ 12 .debug_frame  00000058  00000000  00000000  000039bc  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 SYMBOL TABLE:
 08000000 l    d  .text	00000000 .text
@@ -59,11 +59,11 @@ SYMBOL TABLE:
 20000020 l     O .bss	00000004 last_capture_ticks
 20000018 l     O .data	00000004 delta_ticks
 2000001e l     O .bss	00000002 laps
-0800043c l     O .text	00000168 led_pattern
-2000001c l     O .bss	00000001 delta_buffer_index
-20000004 l     O .data	00000014 delta_buffer
-20000000 l     O .data	00000004 delta_sum
-0800033c g     F .text	00000100 ADC1_2_IRQHandler
+08000438 l     O .text	00000168 led_pattern
+2000001c l     O .bss	00000001 lap_buffer_index
+20000000 l     O .data	00000004 lap_sum
+20000004 l     O .data	00000014 lap_buffer
+0800033c g     F .text	000000fc ADC1_2_IRQHandler
 08000000 g     O .text	000000e0 vector_table
 080000e0 g     F .text	0000025c main
 
@@ -367,7 +367,7 @@ int main(void)
 
 
         for(;;) {
-            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[(((DEVMAP->TIMs[TIM2].REGs.CNT - last_capture_ticks) / delta_ticks)+laps) % LED_PATTERN_LENGTH];
+            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[(((DEVMAP->TIMs[TIM2].REGs.CNT - last_capture_ticks) / delta_ticks) + laps) % LED_PATTERN_LENGTH];
  80002b6:	f04f 4780 	mov.w	r7, #1073741824	@ 0x40000000
  80002ba:	26b4      	movs	r6, #180	@ 0xb4
         low_detected = (initial_sample < ADC_THRESHOLD_LOW_RAW);
@@ -383,7 +383,7 @@ int main(void)
  80002d4:	f8df e058 	ldr.w	lr, [pc, #88]	@ 8000330 <main+0x250>
  80002d8:	f8c1 8100 	str.w	r8, [r1, #256]	@ 0x100
  80002dc:	f8df c054 	ldr.w	ip, [pc, #84]	@ 8000334 <main+0x254>
-            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[(((DEVMAP->TIMs[TIM2].REGs.CNT - last_capture_ticks) / delta_ticks)+laps) % LED_PATTERN_LENGTH];
+            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[(((DEVMAP->TIMs[TIM2].REGs.CNT - last_capture_ticks) / delta_ticks) + laps) % LED_PATTERN_LENGTH];
  80002e0:	4815      	ldr	r0, [pc, #84]	@ (8000338 <main+0x258>)
  80002e2:	490e      	ldr	r1, [pc, #56]	@ (800031c <main+0x23c>)
  80002e4:	6a7b      	ldr	r3, [r7, #36]	@ 0x24
@@ -411,7 +411,7 @@ int main(void)
  8000328:	20000020 	.word	0x20000020
  800032c:	20000018 	.word	0x20000018
  8000330:	2000001e 	.word	0x2000001e
- 8000334:	0800043c 	.word	0x0800043c
+ 8000334:	08000438 	.word	0x08000438
  8000338:	16c16c17 	.word	0x16c16c17
 
 0800033c <ADC1_2_IRQHandler>:
@@ -424,10 +424,10 @@ void ADC1_2_IRQHandler(void)
  800033c:	b5f0      	push	{r4, r5, r6, r7, lr}
         // Leer DR (esto automáticamente limpia EOC en modo continuo)
     uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
- 800033e:	4b35      	ldr	r3, [pc, #212]	@ (8000414 <ADC1_2_IRQHandler+0xd8>)
+ 800033e:	4b33      	ldr	r3, [pc, #204]	@ (800040c <ADC1_2_IRQHandler+0xd0>)
 
     if (!low_detected && (sample < ADC_THRESHOLD_LOW_RAW)) {
- 8000340:	4a35      	ldr	r2, [pc, #212]	@ (8000418 <ADC1_2_IRQHandler+0xdc>)
+ 8000340:	4a33      	ldr	r2, [pc, #204]	@ (8000410 <ADC1_2_IRQHandler+0xd4>)
     uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
  8000342:	f8d3 344c 	ldr.w	r3, [r3, #1100]	@ 0x44c
     if (!low_detected && (sample < ADC_THRESHOLD_LOW_RAW)) {
@@ -446,7 +446,7 @@ void ADC1_2_IRQHandler(void)
 
     if (low_detected && (sample > ADC_THRESHOLD_HIGH_RAW)) {
  8000358:	7813      	ldrb	r3, [r2, #0]
-            last_capture_ticks = current_ticks;
+            
             low_detected = 0;
             laps = (laps + 1) % 180;
     }
@@ -455,7 +455,7 @@ void ADC1_2_IRQHandler(void)
  800035a:	f04f 21e0 	mov.w	r1, #3758153728	@ 0xe000e000
  800035e:	f44f 2080 	mov.w	r0, #262144	@ 0x40000
 	DEVMAP->ADC[ADC1].REGs.SR &= ~(1 << 1);					// Clear EOC bit
- 8000362:	4a2c      	ldr	r2, [pc, #176]	@ (8000414 <ADC1_2_IRQHandler+0xd8>)
+ 8000362:	4a2a      	ldr	r2, [pc, #168]	@ (800040c <ADC1_2_IRQHandler+0xd0>)
  8000364:	f8d2 3400 	ldr.w	r3, [r2, #1024]	@ 0x400
  8000368:	f023 0302 	bic.w	r3, r3, #2
  800036c:	f8c2 3400 	str.w	r3, [r2, #1024]	@ 0x400
@@ -473,9 +473,9 @@ void ADC1_2_IRQHandler(void)
             uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
  8000384:	f04f 4380 	mov.w	r3, #1073741824	@ 0x40000000
             if (ticks_one_lap > 100 && ticks_one_lap < 60000) {
- 8000388:	f64e 11ab 	movw	r1, #59819	@ 0xe9ab
+ 8000388:	f64e 11fa 	movw	r1, #59898	@ 0xe9fa
             uint32_t ticks_one_lap = (current_ticks - last_capture_ticks) & 0xFFFF; // Manejar desbordamiento de 16 bits
- 800038c:	4823      	ldr	r0, [pc, #140]	@ (800041c <ADC1_2_IRQHandler+0xe0>)
+ 800038c:	4821      	ldr	r0, [pc, #132]	@ (8000414 <ADC1_2_IRQHandler+0xd8>)
             uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
  800038e:	6a5c      	ldr	r4, [r3, #36]	@ 0x24
             uint32_t ticks_one_lap = (current_ticks - last_capture_ticks) & 0xFFFF; // Manejar desbordamiento de 16 bits
@@ -483,113 +483,105 @@ void ADC1_2_IRQHandler(void)
  8000392:	1ae3      	subs	r3, r4, r3
  8000394:	b29b      	uxth	r3, r3
             if (ticks_one_lap > 100 && ticks_one_lap < 60000) {
- 8000396:	f1a3 0cb4 	sub.w	ip, r3, #180	@ 0xb4
- 800039a:	458c      	cmp	ip, r1
- 800039c:	d828      	bhi.n	80003f0 <ADC1_2_IRQHandler+0xb4>
-                uint32_t new_delta = ticks_one_lap / LED_PATTERN_LENGTH;
- 800039e:	4920      	ldr	r1, [pc, #128]	@ (8000420 <ADC1_2_IRQHandler+0xe4>)
-                    delta_sum -= delta_buffer[delta_buffer_index];  // Restar valor viejo
- 80003a0:	4d20      	ldr	r5, [pc, #128]	@ (8000424 <ADC1_2_IRQHandler+0xe8>)
-                uint32_t new_delta = ticks_one_lap / LED_PATTERN_LENGTH;
- 80003a2:	089b      	lsrs	r3, r3, #2
-                    delta_sum -= delta_buffer[delta_buffer_index];  // Restar valor viejo
- 80003a4:	f895 c000 	ldrb.w	ip, [r5]
-                uint32_t new_delta = ticks_one_lap / LED_PATTERN_LENGTH;
- 80003a8:	fba1 1303 	umull	r1, r3, r1, r3
-                    delta_sum -= delta_buffer[delta_buffer_index];  // Restar valor viejo
- 80003ac:	4f1e      	ldr	r7, [pc, #120]	@ (8000428 <ADC1_2_IRQHandler+0xec>)
- 80003ae:	4e1f      	ldr	r6, [pc, #124]	@ (800042c <ADC1_2_IRQHandler+0xf0>)
- 80003b0:	f857 102c 	ldr.w	r1, [r7, ip, lsl #2]
-                uint32_t new_delta = ticks_one_lap / LED_PATTERN_LENGTH;
- 80003b4:	ea4f 0e93 	mov.w	lr, r3, lsr #2
-                    delta_sum -= delta_buffer[delta_buffer_index];  // Restar valor viejo
- 80003b8:	ebc1 0193 	rsb	r1, r1, r3, lsr #2
- 80003bc:	6833      	ldr	r3, [r6, #0]
-                    delta_buffer[delta_buffer_index] = new_delta;   // Guardar nuevo valor
- 80003be:	f847 e02c 	str.w	lr, [r7, ip, lsl #2]
-                    delta_sum += new_delta;                         // Sumar nuevo valor
- 80003c2:	440b      	add	r3, r1
-                    delta_buffer_index = (delta_buffer_index + 1) % MOVING_AVG_SIZE;
- 80003c4:	491a      	ldr	r1, [pc, #104]	@ (8000430 <ADC1_2_IRQHandler+0xf4>)
- 80003c6:	f10c 0e01 	add.w	lr, ip, #1
-                    delta_sum += new_delta;                         // Sumar nuevo valor
- 80003ca:	6033      	str	r3, [r6, #0]
-                    delta_ticks = delta_sum / MOVING_AVG_SIZE;
- 80003cc:	fba1 6303 	umull	r6, r3, r1, r3
-                    delta_buffer_index = (delta_buffer_index + 1) % MOVING_AVG_SIZE;
- 80003d0:	fba1 610e 	umull	r6, r1, r1, lr
-                    delta_ticks = delta_sum / MOVING_AVG_SIZE;
- 80003d4:	4e17      	ldr	r6, [pc, #92]	@ (8000434 <ADC1_2_IRQHandler+0xf8>)
-                    delta_buffer_index = (delta_buffer_index + 1) % MOVING_AVG_SIZE;
- 80003d6:	f021 0c03 	bic.w	ip, r1, #3
-                    delta_ticks = delta_sum / MOVING_AVG_SIZE;
- 80003da:	089b      	lsrs	r3, r3, #2
-                    delta_buffer_index = (delta_buffer_index + 1) % MOVING_AVG_SIZE;
- 80003dc:	eb0c 0191 	add.w	r1, ip, r1, lsr #2
-                    delta_ticks = delta_sum / MOVING_AVG_SIZE;
- 80003e0:	6033      	str	r3, [r6, #0]
-                    delta_buffer_index = (delta_buffer_index + 1) % MOVING_AVG_SIZE;
- 80003e2:	ebae 0301 	sub.w	r3, lr, r1
- 80003e6:	702b      	strb	r3, [r5, #0]
-                    if (delta_ticks == 0) {
- 80003e8:	6833      	ldr	r3, [r6, #0]
- 80003ea:	b90b      	cbnz	r3, 80003f0 <ADC1_2_IRQHandler+0xb4>
-                        delta_ticks = 1;
- 80003ec:	2301      	movs	r3, #1
- 80003ee:	6033      	str	r3, [r6, #0]
+ 8000396:	f1a3 0565 	sub.w	r5, r3, #101	@ 0x65
+ 800039a:	428d      	cmp	r5, r1
+ 800039c:	d824      	bhi.n	80003e8 <ADC1_2_IRQHandler+0xac>
+                lap_sum -= lap_buffer[lap_buffer_index];        // Restar valor viejo
+ 800039e:	4d1e      	ldr	r5, [pc, #120]	@ (8000418 <ADC1_2_IRQHandler+0xdc>)
+ 80003a0:	4e1e      	ldr	r6, [pc, #120]	@ (800041c <ADC1_2_IRQHandler+0xe0>)
+ 80003a2:	f895 c000 	ldrb.w	ip, [r5]
+ 80003a6:	4f1e      	ldr	r7, [pc, #120]	@ (8000420 <ADC1_2_IRQHandler+0xe4>)
+ 80003a8:	6831      	ldr	r1, [r6, #0]
+ 80003aa:	f857 e02c 	ldr.w	lr, [r7, ip, lsl #2]
+ 80003ae:	4419      	add	r1, r3
+                lap_buffer[lap_buffer_index] = ticks_one_lap;   // Guardar nuevo valor
+ 80003b0:	f847 302c 	str.w	r3, [r7, ip, lsl #2]
+                lap_sum += ticks_one_lap;                       // Sumar nuevo valor
+ 80003b4:	eba1 030e 	sub.w	r3, r1, lr
+                delta_ticks = avg_lap_ticks / LED_PATTERN_LENGTH;
+ 80003b8:	491a      	ldr	r1, [pc, #104]	@ (8000424 <ADC1_2_IRQHandler+0xe8>)
+                lap_sum += ticks_one_lap;                       // Sumar nuevo valor
+ 80003ba:	6033      	str	r3, [r6, #0]
+                delta_ticks = avg_lap_ticks / LED_PATTERN_LENGTH;
+ 80003bc:	fba1 1303 	umull	r1, r3, r1, r3
+                lap_buffer_index = (lap_buffer_index + 1) % MOVING_AVG_SIZE;
+ 80003c0:	4919      	ldr	r1, [pc, #100]	@ (8000428 <ADC1_2_IRQHandler+0xec>)
+ 80003c2:	f10c 0e01 	add.w	lr, ip, #1
+ 80003c6:	fba1 610e 	umull	r6, r1, r1, lr
+                delta_ticks = avg_lap_ticks / LED_PATTERN_LENGTH;
+ 80003ca:	4e18      	ldr	r6, [pc, #96]	@ (800042c <ADC1_2_IRQHandler+0xf0>)
+                lap_buffer_index = (lap_buffer_index + 1) % MOVING_AVG_SIZE;
+ 80003cc:	f401 7cfe 	and.w	ip, r1, #508	@ 0x1fc
+                delta_ticks = avg_lap_ticks / LED_PATTERN_LENGTH;
+ 80003d0:	0a5b      	lsrs	r3, r3, #9
+                lap_buffer_index = (lap_buffer_index + 1) % MOVING_AVG_SIZE;
+ 80003d2:	eb0c 0191 	add.w	r1, ip, r1, lsr #2
+                delta_ticks = avg_lap_ticks / LED_PATTERN_LENGTH;
+ 80003d6:	6033      	str	r3, [r6, #0]
+                lap_buffer_index = (lap_buffer_index + 1) % MOVING_AVG_SIZE;
+ 80003d8:	ebae 0301 	sub.w	r3, lr, r1
+ 80003dc:	702b      	strb	r3, [r5, #0]
+                if (delta_ticks == 0) {
+ 80003de:	6833      	ldr	r3, [r6, #0]
+ 80003e0:	b90b      	cbnz	r3, 80003e6 <ADC1_2_IRQHandler+0xaa>
+                    delta_ticks = 1;
+ 80003e2:	2301      	movs	r3, #1
+ 80003e4:	6033      	str	r3, [r6, #0]
+                last_capture_ticks = current_ticks;
+ 80003e6:	6004      	str	r4, [r0, #0]
             low_detected = 0;
- 80003f0:	2300      	movs	r3, #0
-            last_capture_ticks = current_ticks;
- 80003f2:	6004      	str	r4, [r0, #0]
+ 80003e8:	2300      	movs	r3, #0
             laps = (laps + 1) % 180;
- 80003f4:	24b4      	movs	r4, #180	@ 0xb4
- 80003f6:	4910      	ldr	r1, [pc, #64]	@ (8000438 <ADC1_2_IRQHandler+0xfc>)
+ 80003ea:	24b4      	movs	r4, #180	@ 0xb4
+ 80003ec:	4910      	ldr	r1, [pc, #64]	@ (8000430 <ADC1_2_IRQHandler+0xf4>)
             low_detected = 0;
- 80003f8:	7013      	strb	r3, [r2, #0]
+ 80003ee:	7013      	strb	r3, [r2, #0]
             laps = (laps + 1) % 180;
- 80003fa:	880b      	ldrh	r3, [r1, #0]
- 80003fc:	4808      	ldr	r0, [pc, #32]	@ (8000420 <ADC1_2_IRQHandler+0xe4>)
- 80003fe:	b29b      	uxth	r3, r3
- 8000400:	3301      	adds	r3, #1
- 8000402:	089a      	lsrs	r2, r3, #2
- 8000404:	fba0 0202 	umull	r0, r2, r0, r2
- 8000408:	0892      	lsrs	r2, r2, #2
- 800040a:	fb04 3312 	mls	r3, r4, r2, r3
- 800040e:	b29b      	uxth	r3, r3
- 8000410:	800b      	strh	r3, [r1, #0]
- 8000412:	e7a2      	b.n	800035a <ADC1_2_IRQHandler+0x1e>
- 8000414:	40012000 	.word	0x40012000
- 8000418:	20000024 	.word	0x20000024
- 800041c:	20000020 	.word	0x20000020
- 8000420:	16c16c17 	.word	0x16c16c17
- 8000424:	2000001c 	.word	0x2000001c
- 8000428:	20000004 	.word	0x20000004
- 800042c:	20000000 	.word	0x20000000
- 8000430:	cccccccd 	.word	0xcccccccd
- 8000434:	20000018 	.word	0x20000018
- 8000438:	2000001e 	.word	0x2000001e
+ 80003f0:	880b      	ldrh	r3, [r1, #0]
+ 80003f2:	4810      	ldr	r0, [pc, #64]	@ (8000434 <ADC1_2_IRQHandler+0xf8>)
+ 80003f4:	b29b      	uxth	r3, r3
+ 80003f6:	3301      	adds	r3, #1
+ 80003f8:	089a      	lsrs	r2, r3, #2
+ 80003fa:	fba0 0202 	umull	r0, r2, r0, r2
+ 80003fe:	0892      	lsrs	r2, r2, #2
+ 8000400:	fb04 3312 	mls	r3, r4, r2, r3
+ 8000404:	b29b      	uxth	r3, r3
+ 8000406:	800b      	strh	r3, [r1, #0]
+ 8000408:	e7a7      	b.n	800035a <ADC1_2_IRQHandler+0x1e>
+ 800040a:	bf00      	nop
+ 800040c:	40012000 	.word	0x40012000
+ 8000410:	20000024 	.word	0x20000024
+ 8000414:	20000020 	.word	0x20000020
+ 8000418:	2000001c 	.word	0x2000001c
+ 800041c:	20000000 	.word	0x20000000
+ 8000420:	20000004 	.word	0x20000004
+ 8000424:	91a2b3c5 	.word	0x91a2b3c5
+ 8000428:	cccccccd 	.word	0xcccccccd
+ 800042c:	20000018 	.word	0x20000018
+ 8000430:	2000001e 	.word	0x2000001e
+ 8000434:	16c16c17 	.word	0x16c16c17
 
-0800043c <led_pattern>:
- 800043c:	80808080 80808080 90c09fff 90c090c0     ................
- 800044c:	88a090c0 8080879f 9fef8080 80808080     ................
- 800045c:	88a0879f 91c090c0 89c091c0 808087a0     ................
- 800046c:	9fef8080 80808080 80c080c0 9fff80c0     ................
- 800047c:	80c080c0 808080c0 9c808080 829e8381     ................
- 800048c:	829e82e0 9c808381 80808080 90809fff     ................
- 800049c:	90809080 90809080 80808080 90c29fff     ................
- 80004ac:	90c090c2 90c090c0 80808080 90a2889c     ................
- 80004bc:	90c190c2 90c190c1 80808fa0 80808080     ................
- 80004cc:	90c090c0 90c09fff 808090c0 90c08080     ................
- 80004dc:	9fff90c0 90c090c0 80808080 00008080     ................
- 80004ec:	00000000 80828082 80858085 81888188     ................
- 80004fc:	82908290 84a084a0 98c098c0 84a084a0     ................
- 800050c:	82908290 81888188 80858085 80828082     ................
- 800051c:	00000000 80808080 9fff8080 809080a0     ................
- 800052c:	80908088 9fff80a0 80808080 80809fef     ................
- 800053c:	9fff8080 81c180c1 84c282c1 808098bc     ................
- 800054c:	9c808080 828e8381 82c082b8 828e82b8     ................
- 800055c:	9c808381 80808080 80c19fff 82c181c1     ................
- 800056c:	98bc84c2 80808080 88a0879f 90c090c0     ................
- 800057c:	90c090c0 80808080 81809fff 81808180     ................
- 800058c:	81808180 80809fff 9fef8080 80808080     ................
- 800059c:	80808080 80808080                       ........
+08000438 <led_pattern>:
+ 8000438:	80808080 80808080 90c09fff 90c090c0     ................
+ 8000448:	88a090c0 8080879f 9fef8080 80808080     ................
+ 8000458:	88a0879f 91c090c0 89c091c0 808087a0     ................
+ 8000468:	9fef8080 80808080 80c080c0 9fff80c0     ................
+ 8000478:	80c080c0 808080c0 9c808080 829e8381     ................
+ 8000488:	829e82e0 9c808381 80808080 90809fff     ................
+ 8000498:	90809080 90809080 80808080 90c29fff     ................
+ 80004a8:	90c090c2 90c090c0 80808080 90a2889c     ................
+ 80004b8:	90c190c2 90c190c1 80808fa0 80808080     ................
+ 80004c8:	90c090c0 90c09fff 808090c0 90c08080     ................
+ 80004d8:	9fff90c0 90c090c0 80808080 00008080     ................
+ 80004e8:	00000000 80828082 80858085 81888188     ................
+ 80004f8:	82908290 84a084a0 98c098c0 84a084a0     ................
+ 8000508:	82908290 81888188 80858085 80828082     ................
+ 8000518:	00000000 80808080 9fff8080 809080a0     ................
+ 8000528:	80908088 9fff80a0 80808080 80809fef     ................
+ 8000538:	9fff8080 81c180c1 84c282c1 808098bc     ................
+ 8000548:	9c808080 828e8381 82c082b8 828e82b8     ................
+ 8000558:	9c808381 80808080 80c19fff 82c181c1     ................
+ 8000568:	98bc84c2 80808080 88a0879f 90c090c0     ................
+ 8000578:	90c090c0 80808080 81809fff 81808180     ................
+ 8000588:	81808180 80809fff 9fef8080 80808080     ................
+ 8000598:	80808080 80808080                       ........

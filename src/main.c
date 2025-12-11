@@ -224,17 +224,11 @@ enum IRQs {
 #define GPIO_OUTPUT_MODE_PUSH_PULL    0x33333333
 #define TIM2_PRESCALER_30KHZ          (2400U - 1U)
 #define TIM2_AUTO_RELOAD_MAX_16BIT    0xFFFFU
-#define MOVING_AVG_SIZE               5U
 
 static volatile uint8_t low_detected = 0;
 static volatile uint32_t last_capture_ticks = 0;
 static volatile uint32_t delta_ticks = 1;
 static volatile uint16_t laps = 0;
-
-// Media móvil para suavizar delta_ticks
-static uint32_t delta_buffer[MOVING_AVG_SIZE] = {1, 1, 1, 1, 1};
-static uint8_t delta_buffer_index = 0;
-static uint32_t delta_sum = 5;
 /*static const uint16_t led_pins[14] = {
 	7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15
 };
@@ -470,7 +464,7 @@ int main(void)
 
 
         for(;;) {
-            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[(((DEVMAP->TIMs[TIM2].REGs.CNT - last_capture_ticks) / delta_ticks)+laps) % LED_PATTERN_LENGTH];
+            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[(((DEVMAP->TIMs[TIM2].REGs.CNT - last_capture_ticks) / delta_ticks)+((laps/10))) % LED_PATTERN_LENGTH];
         }
 
         return 0;
@@ -487,31 +481,14 @@ void ADC1_2_IRQHandler(void)
 
     if (low_detected && (sample > ADC_THRESHOLD_HIGH_RAW)) {
             uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
-            uint32_t ticks_one_lap = (current_ticks - last_capture_ticks) & 0xFFFF; // Manejar desbordamiento de 16 bits
-            
-            // Validar que la medición sea razonable (entre 100 y 60000 ticks)
-            // Esto filtra lecturas erróneas por ruido
-            if (ticks_one_lap > 100 && ticks_one_lap < 60000) {
-                uint32_t new_delta = ticks_one_lap / LED_PATTERN_LENGTH;
-                
-                if (new_delta > 0) {
-                    // Actualizar buffer circular de media móvil
-                    delta_sum -= delta_buffer[delta_buffer_index];  // Restar valor viejo
-                    delta_buffer[delta_buffer_index] = new_delta;   // Guardar nuevo valor
-                    delta_sum += new_delta;                         // Sumar nuevo valor
-                    delta_buffer_index = (delta_buffer_index + 1) % MOVING_AVG_SIZE;
-                    
-                    // Calcular media móvil
-                    delta_ticks = delta_sum / MOVING_AVG_SIZE;
-                    if (delta_ticks == 0) {
-                        delta_ticks = 1;
-                    }
-                }
-            }
-            
+            uint16_t ticks_one_lap = current_ticks - last_capture_ticks;
             last_capture_ticks = current_ticks;
+            delta_ticks = ticks_one_lap / LED_PATTERN_LENGTH; // Ventana de 2 grados
+            if (delta_ticks <= 0) {
+                    delta_ticks = 1;
+            }
             low_detected = 0;
-            laps = (laps + 1) % 180;
+			laps = (laps + 1) % 1800;
     }
 	DEVMAP->ADC[ADC1].REGs.SR &= ~(1 << 1);					// Clear EOC bit
 	CLR_IRQ(IRQ_ADC1_2);
