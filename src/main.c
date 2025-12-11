@@ -216,11 +216,16 @@ enum IRQs {
 	IRQ_EXTI15_10 = 40,
 };
 
-static const uint32_t falling_threshold_mv = 1250;
-static const uint32_t rising_threshold_mv  = 1500;
+#define LED_PATTERN_LENGTH            180U
+#define ADC_THRESHOLD_LOW_RAW         1365U  // ~1100mV
+#define ADC_THRESHOLD_HIGH_RAW        1870U  // ~1500mV
+#define ADC_CHANNEL_B1                9U
+#define ADC_SAMPLE_TIME_CYCLES        0b111
+#define GPIO_OUTPUT_MODE_PUSH_PULL    0x33333333
+#define TIM2_PRESCALER_30KHZ          (2400U - 1U)
+#define TIM2_AUTO_RELOAD_MAX_16BIT    0xFFFFU
 
-static volatile uint8_t	led_index = 0;
-static volatile uint8_t	low_detected = 0;
+static volatile uint8_t low_detected = 0;
 static volatile uint32_t last_capture_ticks = 0;
 static volatile uint32_t delta_ticks = 1;
 /*static const uint16_t led_pins[14] = {
@@ -393,8 +398,8 @@ int main(void)
         // Configurar TIM2 como contador libre para time-stamping
         // ========================================
         DEVMAP->TIMs[TIM2].REGs.CR1 = 0;
-        DEVMAP->TIMs[TIM2].REGs.PSC = 2400 - 1;                        // 72MHz / 2400 = 30kHz -> 33.33us por tick
-        DEVMAP->TIMs[TIM2].REGs.ARR = 0xFFFF;            // Conteo libre de 32 bits
+        DEVMAP->TIMs[TIM2].REGs.PSC = TIM2_PRESCALER_30KHZ;            // 72MHz / 2400 = 30kHz -> 33.33us por tick
+        DEVMAP->TIMs[TIM2].REGs.ARR = TIM2_AUTO_RELOAD_MAX_16BIT;      // Conteo libre de 16 bits
         DEVMAP->TIMs[TIM2].REGs.CNT = 0;
         DEVMAP->TIMs[TIM2].REGs.CR1 |= (1 << 0);             // CEN: habilitar contador
 
@@ -406,10 +411,10 @@ int main(void)
         DEVMAP->RCC.REGs.CFGR |=  (0b11 << 14);             // ADCPRE = 10: PCLK2/6
 
         // Configurar ADC primero, ANTES de encender
-        DEVMAP->ADC[ADC1].REGs.SMPR2 &= ~(0b111 << (3 * 9));
-        DEVMAP->ADC[ADC1].REGs.SMPR2 |=  (0b111 << (3 * 9)); // Sample time = 239.5 ciclos
+        DEVMAP->ADC[ADC1].REGs.SMPR2 &= ~(0b111 << (3 * ADC_CHANNEL_B1));
+        DEVMAP->ADC[ADC1].REGs.SMPR2 |=  (ADC_SAMPLE_TIME_CYCLES << (3 * ADC_CHANNEL_B1)); // Sample time = 239.5 ciclos
         DEVMAP->ADC[ADC1].REGs.SQR1 &= ~(0b1111 << 20);      // Longitud de secuencia = 1
-        DEVMAP->ADC[ADC1].REGs.SQR3  = 9;                    // Canal 9 (PB1) como primera conversión
+        DEVMAP->ADC[ADC1].REGs.SQR3  = ADC_CHANNEL_B1;       // Canal 9 (PB1) como primera conversión
         DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 1);             // Modo continuo habilitado
         
         // Ahora encender y calibrar
@@ -435,8 +440,8 @@ int main(void)
         // ========================================
 	// CRL configura PA[7:0]:   MODE=11 (50MHz), CNF=00 (Push-pull) = 0x3 por pin
 	// CRH configura PA[15:8]:  MODE=11 (50MHz), CNF=00 (Push-pull) = 0x3 por pin
-	DEVMAP->GPIOs[GPIOA].REGs.CRL = 0x33333333;  // PA[7:0]  como salidas
-	DEVMAP->GPIOs[GPIOA].REGs.CRH = 0x33333333;  // PA[15:8] como salidas
+        DEVMAP->GPIOs[GPIOA].REGs.CRL = GPIO_OUTPUT_MODE_PUSH_PULL;  // PA[7:0]  como salidas
+        DEVMAP->GPIOs[GPIOA].REGs.CRH = GPIO_OUTPUT_MODE_PUSH_PULL;  // PA[15:8] como salidas
 	
         // ========================================
         // Bucle principal: encender LEDs en secuencia
@@ -449,7 +454,7 @@ int main(void)
         // Preparar estado inicial del comparador de umbral con la siguiente conversión válida
         while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
         uint16_t initial_sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
-        low_detected = (initial_sample < 1365);
+        low_detected = (initial_sample < ADC_THRESHOLD_LOW_RAW);
 
 
         // Habilitar interrupción de fin de conversión
@@ -459,7 +464,7 @@ int main(void)
 
         for(;;) {
             uint32_t ticks_now = DEVMAP->TIMs[TIM2].REGs.CNT;
-            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[((ticks_now - last_capture_ticks) / delta_ticks) % 180];
+            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[((ticks_now - last_capture_ticks) / delta_ticks) % LED_PATTERN_LENGTH];
         }
 
         return 0;
@@ -470,15 +475,15 @@ void ADC1_2_IRQHandler(void)
         // Leer DR (esto automáticamente limpia EOC en modo continuo)
         uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
 
-        if (!low_detected && (sample < 1365)) { //1365 ~ 1100mV
+        if (!low_detected && (sample < ADC_THRESHOLD_LOW_RAW)) {
                 low_detected = 1;
         }
 
-        if (low_detected && (sample > 1870)) { // 1870 ~ 1500mV
+        if (low_detected && (sample > ADC_THRESHOLD_HIGH_RAW)) {
                 uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
                 uint32_t ticks_one_lap = current_ticks - last_capture_ticks;
                 last_capture_ticks = current_ticks;
-                delta_ticks = ticks_one_lap / 180; // Ventana de 2 grados
+                delta_ticks = ticks_one_lap / LED_PATTERN_LENGTH; // Ventana de 2 grados
                 if (delta_ticks == 0) {
                         delta_ticks = 1;
                 }
