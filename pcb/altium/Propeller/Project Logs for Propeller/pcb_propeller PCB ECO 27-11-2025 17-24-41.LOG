@@ -1,5 +1,0 @@
-Removed Pin From Net: NetName=NetU1_34 Pin=U2-6
-Removed Pin From Net: NetName=NetU1_33 Pin=U2-7
-Added Pin To Net: NetName=NetU1_33 Pin=U2-6
-Added Pin To Net: NetName=NetU1_34 Pin=U2-7
-Added Room: Name=sch_propeller

@@ -7,43 +7,43 @@ start address 0x080000e1
 
 Program Header:
     LOAD off    0x00001000 vaddr 0x08000000 paddr 0x08000000 align 2**12
-         filesz 0x000005a0 memsz 0x000005a0 flags r-x
-    LOAD off    0x00002000 vaddr 0x20000000 paddr 0x080005a0 align 2**12
-         filesz 0x0000001c memsz 0x00000028 flags rw-
+         filesz 0x0000053c memsz 0x0000053c flags r-x
+    LOAD off    0x00002000 vaddr 0x20000000 paddr 0x0800053c align 2**12
+         filesz 0x00000004 memsz 0x00000008 flags rw-
 private flags = 0x5000200: [Version5 EABI] [soft-float ABI]
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         000005a0  08000000  08000000  00001000  2**2
+  0 .text         0000053c  08000000  08000000  00001000  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         0000001c  20000000  080005a0  00002000  2**2
+  1 .data         00000004  20000000  0800053c  00002000  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .bss          0000000c  2000001c  080005bc  0000201c  2**2
+  2 .bss          00000004  20000004  08000540  00002004  2**1
                   ALLOC
-  3 .debug_info   00000cb6  00000000  00000000  0000201c  2**0
+  3 .debug_info   00000c41  00000000  00000000  00002004  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-  4 .debug_abbrev 00000248  00000000  00000000  00002cd2  2**0
+  4 .debug_abbrev 00000248  00000000  00000000  00002c45  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-  5 .debug_loclists 00000076  00000000  00000000  00002f1a  2**0
+  5 .debug_loclists 00000036  00000000  00000000  00002e8d  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-  6 .debug_aranges 00000028  00000000  00000000  00002f90  2**0
+  6 .debug_aranges 00000028  00000000  00000000  00002ec3  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-  7 .debug_rnglists 0000001b  00000000  00000000  00002fb8  2**0
+  7 .debug_rnglists 0000001b  00000000  00000000  00002eeb  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-  8 .debug_line   000004a1  00000000  00000000  00002fd3  2**0
+  8 .debug_line   0000044c  00000000  00000000  00002f06  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-  9 .debug_str    000004d2  00000000  00000000  00003474  2**0
+  9 .debug_str    00000492  00000000  00000000  00003352  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 10 .comment      00000046  00000000  00000000  00003946  2**0
+ 10 .comment      00000046  00000000  00000000  000037e4  2**0
                   CONTENTS, READONLY
- 11 .ARM.attributes 0000002d  00000000  00000000  0000398c  2**0
+ 11 .ARM.attributes 0000002d  00000000  00000000  0000382a  2**0
                   CONTENTS, READONLY
- 12 .debug_frame  00000058  00000000  00000000  000039bc  2**2
+ 12 .debug_frame  00000054  00000000  00000000  00003858  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 SYMBOL TABLE:
 08000000 l    d  .text	00000000 .text
 20000000 l    d  .data	00000000 .data
-2000001c l    d  .bss	00000000 .bss
+20000004 l    d  .bss	00000000 .bss
 00000000 l    d  .debug_info	00000000 .debug_info
 00000000 l    d  .debug_abbrev	00000000 .debug_abbrev
 00000000 l    d  .debug_loclists	00000000 .debug_loclists
@@ -55,17 +55,13 @@ SYMBOL TABLE:
 00000000 l    d  .ARM.attributes	00000000 .ARM.attributes
 00000000 l    d  .debug_frame	00000000 .debug_frame
 00000000 l    df *ABS*	00000000 main.c
-20000024 l     O .bss	00000001 low_detected
-20000020 l     O .bss	00000004 last_capture_ticks
-20000018 l     O .data	00000004 delta_ticks
-2000001e l     O .bss	00000002 laps
-08000438 l     O .text	00000168 led_pattern
-2000001c l     O .bss	00000001 lap_buffer_index
-20000000 l     O .data	00000004 lap_sum
-20000004 l     O .data	00000014 lap_buffer
-0800033c g     F .text	000000fc ADC1_2_IRQHandler
+20000006 l     O .bss	00000001 low_detected
+20000000 l     O .data	00000004 delta_ticks
+20000004 l     O .bss	00000002 laps
+080003d4 l     O .text	00000168 led_pattern
+0800032c g     F .text	000000a8 ADC1_2_IRQHandler
 08000000 g     O .text	000000e0 vector_table
-080000e0 g     F .text	0000025c main
+080000e0 g     F .text	0000024c main
 
 
 
@@ -74,7 +70,7 @@ Disassembly of section .text:
 08000000 <vector_table>:
  8000000:	00 50 00 20 e1 00 00 08 00 00 00 00 00 00 00 00     .P. ............
 	...
- 8000088:	3d 03 00 08 00 00 00 00 00 00 00 00 00 00 00 00     =...............
+ 8000088:	2d 03 00 08 00 00 00 00 00 00 00 00 00 00 00 00     -...............
 	...
 
 080000e0 <main>:
@@ -89,7 +85,7 @@ int main(void)
 	// Configuración de reloj: 72MHz vía PLL
 	// ========================================
 	DEVMAP->RCC.REGs.CR |= (1 << 16);              // Habilitar HSE (8MHz)
- 80000e4:	4b8b      	ldr	r3, [pc, #556]	@ (8000314 <main+0x234>)
+ 80000e4:	4b88      	ldr	r3, [pc, #544]	@ (8000308 <main+0x228>)
 {
  80000e6:	b082      	sub	sp, #8
 	DEVMAP->RCC.REGs.CR |= (1 << 16);              // Habilitar HSE (8MHz)
@@ -107,7 +103,7 @@ int main(void)
 	DEVMAP->RCC.REGs.CFGR |= (1 << 16);            // PLLSRC = HSE
 	DEVMAP->RCC.REGs.CR |= (1 << 24);              // Habilitar PLL
 	while (!(DEVMAP->RCC.REGs.CR & (1 << 25)));    // Esperar PLL ready
- 80000f8:	4a86      	ldr	r2, [pc, #536]	@ (8000314 <main+0x234>)
+ 80000f8:	4a83      	ldr	r2, [pc, #524]	@ (8000308 <main+0x228>)
 	DEVMAP->RCC.REGs.CR &= ~(1 << 24);             // Deshabilitar PLL
  80000fa:	f021 7180 	bic.w	r1, r1, #16777216	@ 0x1000000
  80000fe:	6019      	str	r1, [r3, #0]
@@ -135,9 +131,9 @@ int main(void)
 	while (!(DEVMAP->RCC.REGs.CFGR & (0b10 << 2))); // Esperar conmutación
  800011e:	f04f 4180 	mov.w	r1, #1073741824	@ 0x40000000
 	DEVMAP->FLASH.REGs.ACR |= (0b010 << 0);        // FLASH: 2 wait states
- 8000122:	4c7d      	ldr	r4, [pc, #500]	@ (8000318 <main+0x238>)
+ 8000122:	4c7a      	ldr	r4, [pc, #488]	@ (800030c <main+0x22c>)
 	while (!(DEVMAP->RCC.REGs.CFGR & (0b10 << 2))); // Esperar conmutación
- 8000124:	4b7b      	ldr	r3, [pc, #492]	@ (8000314 <main+0x234>)
+ 8000124:	4b78      	ldr	r3, [pc, #480]	@ (8000308 <main+0x228>)
 	DEVMAP->FLASH.REGs.ACR |= (0b010 << 0);        // FLASH: 2 wait states
  8000126:	6820      	ldr	r0, [r4, #0]
  8000128:	f040 0002 	orr.w	r0, r0, #2
@@ -180,7 +176,7 @@ int main(void)
         DEVMAP->RCC.REGs.APB2ENR |= (1 << 2);  // GPIOA clock enable
  8000158:	699a      	ldr	r2, [r3, #24]
         *AFIO_MAPR |=  (0b010 << 24);  // SWJ_CFG = 010 (Deshabilitar JTAG, mantener SWD)
- 800015a:	4870      	ldr	r0, [pc, #448]	@ (800031c <main+0x23c>)
+ 800015a:	486d      	ldr	r0, [pc, #436]	@ (8000310 <main+0x230>)
         DEVMAP->RCC.REGs.APB2ENR |= (1 << 2);  // GPIOA clock enable
  800015c:	f042 0204 	orr.w	r2, r2, #4
  8000160:	619a      	str	r2, [r3, #24]
@@ -199,7 +195,7 @@ int main(void)
         DEVMAP->GPIOs[GPIOB].REGs.CRL &= ~((uint32_t)0xF << 4);
  800017a:	f8d0 6c00 	ldr.w	r6, [r0, #3072]	@ 0xc00
         DEVMAP->ADC[ADC1].REGs.SMPR2 &= ~(0b111 << (3 * ADC_CHANNEL_B1));
- 800017e:	4a68      	ldr	r2, [pc, #416]	@ (8000320 <main+0x240>)
+ 800017e:	4a65      	ldr	r2, [pc, #404]	@ (8000314 <main+0x234>)
         DEVMAP->GPIOs[GPIOB].REGs.CRL &= ~((uint32_t)0xF << 4);
  8000180:	f026 06f0 	bic.w	r6, r6, #240	@ 0xf0
  8000184:	f8c0 6c00 	str.w	r6, [r0, #3072]	@ 0xc00
@@ -270,7 +266,7 @@ int main(void)
  800020c:	dbf8      	blt.n	8000200 <main+0x120>
         
         DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 3);             // RSTCAL: Reset calibration
- 800020e:	4a44      	ldr	r2, [pc, #272]	@ (8000320 <main+0x240>)
+ 800020e:	4a41      	ldr	r2, [pc, #260]	@ (8000314 <main+0x234>)
  8000210:	f8d2 3408 	ldr.w	r3, [r2, #1032]	@ 0x408
  8000214:	f043 0308 	orr.w	r3, r3, #8
  8000218:	f8c2 3408 	str.w	r3, [r2, #1032]	@ 0x408
@@ -282,7 +278,7 @@ int main(void)
         DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 2);             // CAL: Iniciar calibración
  8000224:	f8d2 1408 	ldr.w	r1, [r2, #1032]	@ 0x408
         while (DEVMAP->ADC[ADC1].REGs.CR2 & (1 << 2));       // Esperar que se complete calibración
- 8000228:	4b3d      	ldr	r3, [pc, #244]	@ (8000320 <main+0x240>)
+ 8000228:	4b3a      	ldr	r3, [pc, #232]	@ (8000314 <main+0x234>)
         DEVMAP->ADC[ADC1].REGs.CR2  |= (1 << 2);             // CAL: Iniciar calibración
  800022a:	f041 0104 	orr.w	r1, r1, #4
  800022e:	f8c2 1408 	str.w	r1, [r2, #1032]	@ 0x408
@@ -300,7 +296,7 @@ int main(void)
         DEVMAP->ADC[ADC1].REGs.CR2 &= ~(0b111 << 17);        // EXTSEL = 111 (SWSTART)
  800023e:	f8d3 2408 	ldr.w	r2, [r3, #1032]	@ 0x408
         DEVMAP->GPIOs[GPIOA].REGs.CRL = GPIO_OUTPUT_MODE_PUSH_PULL;  // PA[7:0]  como salidas
- 8000242:	4836      	ldr	r0, [pc, #216]	@ (800031c <main+0x23c>)
+ 8000242:	4833      	ldr	r0, [pc, #204]	@ (8000310 <main+0x230>)
         DEVMAP->ADC[ADC1].REGs.CR2 &= ~(0b111 << 17);        // EXTSEL = 111 (SWSTART)
  8000244:	f422 2260 	bic.w	r2, r2, #917504	@ 0xe0000
  8000248:	f8c3 2408 	str.w	r2, [r3, #1032]	@ 0x408
@@ -312,7 +308,7 @@ int main(void)
         // Preparar estado inicial del comparador de umbral
         // Descartar la primera muestra tras el arranque para evitar lecturas iniciales incorrectas
         while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
- 8000250:	4a33      	ldr	r2, [pc, #204]	@ (8000320 <main+0x240>)
+ 8000250:	4a30      	ldr	r2, [pc, #192]	@ (8000314 <main+0x234>)
         DEVMAP->ADC[ADC1].REGs.CR2 |=  (0b111 << 17);
  8000252:	f441 2160 	orr.w	r1, r1, #917504	@ 0xe0000
  8000256:	f8c3 1408 	str.w	r1, [r3, #1032]	@ 0x408
@@ -341,7 +337,7 @@ int main(void)
 
         // Preparar estado inicial del comparador de umbral con la siguiente conversión válida
         while (!(DEVMAP->ADC[ADC1].REGs.SR & (1 << 1)));
- 8000292:	4a23      	ldr	r2, [pc, #140]	@ (8000320 <main+0x240>)
+ 8000292:	4a20      	ldr	r2, [pc, #128]	@ (8000314 <main+0x234>)
  8000294:	f8d2 3400 	ldr.w	r3, [r2, #1024]	@ 0x400
  8000298:	079b      	lsls	r3, r3, #30
  800029a:	d5fb      	bpl.n	8000294 <main+0x1b4>
@@ -355,7 +351,7 @@ int main(void)
         // Habilitar interrupción de fin de conversión
         DEVMAP->ADC[ADC1].REGs.CR1 |= (1 << 5);             // EOCIE
         ENA_IRQ(IRQ_ADC1_2);
- 80002a4:	f04f 21e0 	mov.w	r1, #3758153728	@ 0xe000e000
+ 80002a4:	f04f 27e0 	mov.w	r7, #3758153728	@ 0xe000e000
         low_detected = (initial_sample < ADC_THRESHOLD_LOW_RAW);
  80002a8:	b29b      	uxth	r3, r3
  80002aa:	4553      	cmp	r3, sl
@@ -367,221 +363,178 @@ int main(void)
 
 
         for(;;) {
-            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[(((DEVMAP->TIMs[TIM2].REGs.CNT - last_capture_ticks) / delta_ticks) + laps) % LED_PATTERN_LENGTH];
- 80002b6:	f04f 4780 	mov.w	r7, #1073741824	@ 0x40000000
- 80002ba:	26b4      	movs	r6, #180	@ 0xb4
+            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[((DEVMAP->TIMs[TIM2].REGs.CNT  / delta_ticks)+(laps)) % LED_PATTERN_LENGTH];
+ 80002b6:	f04f 4680 	mov.w	r6, #1073741824	@ 0x40000000
+ 80002ba:	25b4      	movs	r5, #180	@ 0xb4
         low_detected = (initial_sample < ADC_THRESHOLD_LOW_RAW);
- 80002bc:	f8df 9064 	ldr.w	r9, [pc, #100]	@ 8000324 <main+0x244>
- 80002c0:	4d19      	ldr	r5, [pc, #100]	@ (8000328 <main+0x248>)
+ 80002bc:	f8df 9058 	ldr.w	r9, [pc, #88]	@ 8000318 <main+0x238>
+ 80002c0:	4c16      	ldr	r4, [pc, #88]	@ (800031c <main+0x23c>)
  80002c2:	f889 3000 	strb.w	r3, [r9]
         DEVMAP->ADC[ADC1].REGs.CR1 |= (1 << 5);             // EOCIE
  80002c6:	f8d2 3404 	ldr.w	r3, [r2, #1028]	@ 0x404
- 80002ca:	4c18      	ldr	r4, [pc, #96]	@ (800032c <main+0x24c>)
- 80002cc:	f043 0320 	orr.w	r3, r3, #32
- 80002d0:	f8c2 3404 	str.w	r3, [r2, #1028]	@ 0x404
+ 80002ca:	f8df e054 	ldr.w	lr, [pc, #84]	@ 8000320 <main+0x240>
+ 80002ce:	f043 0320 	orr.w	r3, r3, #32
+ 80002d2:	f8df c050 	ldr.w	ip, [pc, #80]	@ 8000324 <main+0x244>
+            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[((DEVMAP->TIMs[TIM2].REGs.CNT  / delta_ticks)+(laps)) % LED_PATTERN_LENGTH];
+ 80002d6:	4814      	ldr	r0, [pc, #80]	@ (8000328 <main+0x248>)
+ 80002d8:	490d      	ldr	r1, [pc, #52]	@ (8000310 <main+0x230>)
+        DEVMAP->ADC[ADC1].REGs.CR1 |= (1 << 5);             // EOCIE
+ 80002da:	f8c2 3404 	str.w	r3, [r2, #1028]	@ 0x404
         ENA_IRQ(IRQ_ADC1_2);
- 80002d4:	f8df e058 	ldr.w	lr, [pc, #88]	@ 8000330 <main+0x250>
- 80002d8:	f8c1 8100 	str.w	r8, [r1, #256]	@ 0x100
- 80002dc:	f8df c054 	ldr.w	ip, [pc, #84]	@ 8000334 <main+0x254>
-            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[(((DEVMAP->TIMs[TIM2].REGs.CNT - last_capture_ticks) / delta_ticks) + laps) % LED_PATTERN_LENGTH];
- 80002e0:	4815      	ldr	r0, [pc, #84]	@ (8000338 <main+0x258>)
- 80002e2:	490e      	ldr	r1, [pc, #56]	@ (800031c <main+0x23c>)
- 80002e4:	6a7b      	ldr	r3, [r7, #36]	@ 0x24
- 80002e6:	f8d5 8000 	ldr.w	r8, [r5]
- 80002ea:	6822      	ldr	r2, [r4, #0]
- 80002ec:	eba3 0308 	sub.w	r3, r3, r8
- 80002f0:	fbb3 f3f2 	udiv	r3, r3, r2
- 80002f4:	f8be 2000 	ldrh.w	r2, [lr]
- 80002f8:	b292      	uxth	r2, r2
- 80002fa:	4413      	add	r3, r2
- 80002fc:	089a      	lsrs	r2, r3, #2
- 80002fe:	fba0 8202 	umull	r8, r2, r0, r2
- 8000302:	0892      	lsrs	r2, r2, #2
- 8000304:	fb06 3312 	mls	r3, r6, r2, r3
- 8000308:	f83c 3013 	ldrh.w	r3, [ip, r3, lsl #1]
- 800030c:	f8c1 380c 	str.w	r3, [r1, #2060]	@ 0x80c
+ 80002de:	f8c7 8100 	str.w	r8, [r7, #256]	@ 0x100
+            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[((DEVMAP->TIMs[TIM2].REGs.CNT  / delta_ticks)+(laps)) % LED_PATTERN_LENGTH];
+ 80002e2:	6a73      	ldr	r3, [r6, #36]	@ 0x24
+ 80002e4:	6827      	ldr	r7, [r4, #0]
+ 80002e6:	f8be 2000 	ldrh.w	r2, [lr]
+ 80002ea:	fbb3 f3f7 	udiv	r3, r3, r7
+ 80002ee:	b292      	uxth	r2, r2
+ 80002f0:	4413      	add	r3, r2
+ 80002f2:	089a      	lsrs	r2, r3, #2
+ 80002f4:	fba0 7202 	umull	r7, r2, r0, r2
+ 80002f8:	0892      	lsrs	r2, r2, #2
+ 80002fa:	fb05 3312 	mls	r3, r5, r2, r3
+ 80002fe:	f83c 3013 	ldrh.w	r3, [ip, r3, lsl #1]
+ 8000302:	f8c1 380c 	str.w	r3, [r1, #2060]	@ 0x80c
         for(;;) {
- 8000310:	e7e8      	b.n	80002e4 <main+0x204>
- 8000312:	bf00      	nop
- 8000314:	40021000 	.word	0x40021000
- 8000318:	40022000 	.word	0x40022000
- 800031c:	40010000 	.word	0x40010000
- 8000320:	40012000 	.word	0x40012000
- 8000324:	20000024 	.word	0x20000024
- 8000328:	20000020 	.word	0x20000020
- 800032c:	20000018 	.word	0x20000018
- 8000330:	2000001e 	.word	0x2000001e
- 8000334:	08000438 	.word	0x08000438
- 8000338:	16c16c17 	.word	0x16c16c17
+ 8000306:	e7ec      	b.n	80002e2 <main+0x202>
+ 8000308:	40021000 	.word	0x40021000
+ 800030c:	40022000 	.word	0x40022000
+ 8000310:	40010000 	.word	0x40010000
+ 8000314:	40012000 	.word	0x40012000
+ 8000318:	20000006 	.word	0x20000006
+ 800031c:	20000000 	.word	0x20000000
+ 8000320:	20000004 	.word	0x20000004
+ 8000324:	080003d4 	.word	0x080003d4
+ 8000328:	16c16c17 	.word	0x16c16c17
 
-0800033c <ADC1_2_IRQHandler>:
+0800032c <ADC1_2_IRQHandler>:
 
         return 0;
 }
 
 void ADC1_2_IRQHandler(void)
 {
- 800033c:	b5f0      	push	{r4, r5, r6, r7, lr}
+ 800032c:	b410      	push	{r4}
         // Leer DR (esto automáticamente limpia EOC en modo continuo)
     uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
- 800033e:	4b33      	ldr	r3, [pc, #204]	@ (800040c <ADC1_2_IRQHandler+0xd0>)
+ 800032e:	4b24      	ldr	r3, [pc, #144]	@ (80003c0 <ADC1_2_IRQHandler+0x94>)
 
     if (!low_detected && (sample < ADC_THRESHOLD_LOW_RAW)) {
- 8000340:	4a33      	ldr	r2, [pc, #204]	@ (8000410 <ADC1_2_IRQHandler+0xd4>)
+ 8000330:	4a24      	ldr	r2, [pc, #144]	@ (80003c4 <ADC1_2_IRQHandler+0x98>)
     uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
- 8000342:	f8d3 344c 	ldr.w	r3, [r3, #1100]	@ 0x44c
+ 8000332:	f8d3 344c 	ldr.w	r3, [r3, #1100]	@ 0x44c
     if (!low_detected && (sample < ADC_THRESHOLD_LOW_RAW)) {
- 8000346:	7811      	ldrb	r1, [r2, #0]
+ 8000336:	7811      	ldrb	r1, [r2, #0]
     uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
- 8000348:	b29b      	uxth	r3, r3
+ 8000338:	b29b      	uxth	r3, r3
     if (!low_detected && (sample < ADC_THRESHOLD_LOW_RAW)) {
- 800034a:	b9a1      	cbnz	r1, 8000376 <ADC1_2_IRQHandler+0x3a>
- 800034c:	f240 5154 	movw	r1, #1364	@ 0x554
- 8000350:	428b      	cmp	r3, r1
- 8000352:	d810      	bhi.n	8000376 <ADC1_2_IRQHandler+0x3a>
+ 800033a:	b9a9      	cbnz	r1, 8000368 <ADC1_2_IRQHandler+0x3c>
+ 800033c:	f240 5154 	movw	r1, #1364	@ 0x554
+ 8000340:	428b      	cmp	r3, r1
+ 8000342:	d811      	bhi.n	8000368 <ADC1_2_IRQHandler+0x3c>
         low_detected = 1;
- 8000354:	2301      	movs	r3, #1
- 8000356:	7013      	strb	r3, [r2, #0]
+ 8000344:	2301      	movs	r3, #1
+ 8000346:	7013      	strb	r3, [r2, #0]
     }
 
     if (low_detected && (sample > ADC_THRESHOLD_HIGH_RAW)) {
- 8000358:	7813      	ldrb	r3, [r2, #0]
-            
+ 8000348:	7813      	ldrb	r3, [r2, #0]
+            }
             low_detected = 0;
-            laps = (laps + 1) % 180;
+			laps = (laps + 1) % 180;
     }
 	DEVMAP->ADC[ADC1].REGs.SR &= ~(1 << 1);					// Clear EOC bit
 	CLR_IRQ(IRQ_ADC1_2);
- 800035a:	f04f 21e0 	mov.w	r1, #3758153728	@ 0xe000e000
- 800035e:	f44f 2080 	mov.w	r0, #262144	@ 0x40000
+ 800034a:	f04f 21e0 	mov.w	r1, #3758153728	@ 0xe000e000
+ 800034e:	f44f 2080 	mov.w	r0, #262144	@ 0x40000
 	DEVMAP->ADC[ADC1].REGs.SR &= ~(1 << 1);					// Clear EOC bit
- 8000362:	4a2a      	ldr	r2, [pc, #168]	@ (800040c <ADC1_2_IRQHandler+0xd0>)
- 8000364:	f8d2 3400 	ldr.w	r3, [r2, #1024]	@ 0x400
- 8000368:	f023 0302 	bic.w	r3, r3, #2
- 800036c:	f8c2 3400 	str.w	r3, [r2, #1024]	@ 0x400
-	CLR_IRQ(IRQ_ADC1_2);
- 8000370:	f8c1 0280 	str.w	r0, [r1, #640]	@ 0x280
+ 8000352:	4a1b      	ldr	r2, [pc, #108]	@ (80003c0 <ADC1_2_IRQHandler+0x94>)
 }
- 8000374:	bdf0      	pop	{r4, r5, r6, r7, pc}
+ 8000354:	bc10      	pop	{r4}
+	DEVMAP->ADC[ADC1].REGs.SR &= ~(1 << 1);					// Clear EOC bit
+ 8000356:	f8d2 3400 	ldr.w	r3, [r2, #1024]	@ 0x400
+ 800035a:	f023 0302 	bic.w	r3, r3, #2
+ 800035e:	f8c2 3400 	str.w	r3, [r2, #1024]	@ 0x400
+	CLR_IRQ(IRQ_ADC1_2);
+ 8000362:	f8c1 0280 	str.w	r0, [r1, #640]	@ 0x280
+}
+ 8000366:	4770      	bx	lr
     if (low_detected && (sample > ADC_THRESHOLD_HIGH_RAW)) {
- 8000376:	7811      	ldrb	r1, [r2, #0]
- 8000378:	2900      	cmp	r1, #0
- 800037a:	d0ee      	beq.n	800035a <ADC1_2_IRQHandler+0x1e>
- 800037c:	f240 714e 	movw	r1, #1870	@ 0x74e
- 8000380:	428b      	cmp	r3, r1
- 8000382:	d9ea      	bls.n	800035a <ADC1_2_IRQHandler+0x1e>
-            uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
- 8000384:	f04f 4380 	mov.w	r3, #1073741824	@ 0x40000000
-            if (ticks_one_lap > 100 && ticks_one_lap < 60000) {
- 8000388:	f64e 11fa 	movw	r1, #59898	@ 0xe9fa
-            uint32_t ticks_one_lap = (current_ticks - last_capture_ticks) & 0xFFFF; // Manejar desbordamiento de 16 bits
- 800038c:	4821      	ldr	r0, [pc, #132]	@ (8000414 <ADC1_2_IRQHandler+0xd8>)
-            uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
- 800038e:	6a5c      	ldr	r4, [r3, #36]	@ 0x24
-            uint32_t ticks_one_lap = (current_ticks - last_capture_ticks) & 0xFFFF; // Manejar desbordamiento de 16 bits
- 8000390:	6803      	ldr	r3, [r0, #0]
- 8000392:	1ae3      	subs	r3, r4, r3
- 8000394:	b29b      	uxth	r3, r3
-            if (ticks_one_lap > 100 && ticks_one_lap < 60000) {
- 8000396:	f1a3 0565 	sub.w	r5, r3, #101	@ 0x65
- 800039a:	428d      	cmp	r5, r1
- 800039c:	d824      	bhi.n	80003e8 <ADC1_2_IRQHandler+0xac>
-                lap_sum -= lap_buffer[lap_buffer_index];        // Restar valor viejo
- 800039e:	4d1e      	ldr	r5, [pc, #120]	@ (8000418 <ADC1_2_IRQHandler+0xdc>)
- 80003a0:	4e1e      	ldr	r6, [pc, #120]	@ (800041c <ADC1_2_IRQHandler+0xe0>)
- 80003a2:	f895 c000 	ldrb.w	ip, [r5]
- 80003a6:	4f1e      	ldr	r7, [pc, #120]	@ (8000420 <ADC1_2_IRQHandler+0xe4>)
- 80003a8:	6831      	ldr	r1, [r6, #0]
- 80003aa:	f857 e02c 	ldr.w	lr, [r7, ip, lsl #2]
- 80003ae:	4419      	add	r1, r3
-                lap_buffer[lap_buffer_index] = ticks_one_lap;   // Guardar nuevo valor
- 80003b0:	f847 302c 	str.w	r3, [r7, ip, lsl #2]
-                lap_sum += ticks_one_lap;                       // Sumar nuevo valor
- 80003b4:	eba1 030e 	sub.w	r3, r1, lr
-                delta_ticks = avg_lap_ticks / LED_PATTERN_LENGTH;
- 80003b8:	491a      	ldr	r1, [pc, #104]	@ (8000424 <ADC1_2_IRQHandler+0xe8>)
-                lap_sum += ticks_one_lap;                       // Sumar nuevo valor
- 80003ba:	6033      	str	r3, [r6, #0]
-                delta_ticks = avg_lap_ticks / LED_PATTERN_LENGTH;
- 80003bc:	fba1 1303 	umull	r1, r3, r1, r3
-                lap_buffer_index = (lap_buffer_index + 1) % MOVING_AVG_SIZE;
- 80003c0:	4919      	ldr	r1, [pc, #100]	@ (8000428 <ADC1_2_IRQHandler+0xec>)
- 80003c2:	f10c 0e01 	add.w	lr, ip, #1
- 80003c6:	fba1 610e 	umull	r6, r1, r1, lr
-                delta_ticks = avg_lap_ticks / LED_PATTERN_LENGTH;
- 80003ca:	4e18      	ldr	r6, [pc, #96]	@ (800042c <ADC1_2_IRQHandler+0xf0>)
-                lap_buffer_index = (lap_buffer_index + 1) % MOVING_AVG_SIZE;
- 80003cc:	f401 7cfe 	and.w	ip, r1, #508	@ 0x1fc
-                delta_ticks = avg_lap_ticks / LED_PATTERN_LENGTH;
- 80003d0:	0a5b      	lsrs	r3, r3, #9
-                lap_buffer_index = (lap_buffer_index + 1) % MOVING_AVG_SIZE;
- 80003d2:	eb0c 0191 	add.w	r1, ip, r1, lsr #2
-                delta_ticks = avg_lap_ticks / LED_PATTERN_LENGTH;
- 80003d6:	6033      	str	r3, [r6, #0]
-                lap_buffer_index = (lap_buffer_index + 1) % MOVING_AVG_SIZE;
- 80003d8:	ebae 0301 	sub.w	r3, lr, r1
- 80003dc:	702b      	strb	r3, [r5, #0]
-                if (delta_ticks == 0) {
- 80003de:	6833      	ldr	r3, [r6, #0]
- 80003e0:	b90b      	cbnz	r3, 80003e6 <ADC1_2_IRQHandler+0xaa>
+ 8000368:	7811      	ldrb	r1, [r2, #0]
+ 800036a:	2900      	cmp	r1, #0
+ 800036c:	d0ed      	beq.n	800034a <ADC1_2_IRQHandler+0x1e>
+ 800036e:	f240 714e 	movw	r1, #1870	@ 0x74e
+ 8000372:	428b      	cmp	r3, r1
+ 8000374:	d9e9      	bls.n	800034a <ADC1_2_IRQHandler+0x1e>
+            uint32_t ticks_one_lap = DEVMAP->TIMs[TIM2].REGs.CNT;
+ 8000376:	f04f 4c80 	mov.w	ip, #1073741824	@ 0x40000000
+			DEVMAP->TIMs[TIM2].REGs.CNT = 0;
+ 800037a:	2400      	movs	r4, #0
+            uint32_t ticks_one_lap = DEVMAP->TIMs[TIM2].REGs.CNT;
+ 800037c:	f8dc 3024 	ldr.w	r3, [ip, #36]	@ 0x24
+            delta_ticks = ticks_one_lap / LED_PATTERN_LENGTH; // Ventana de 2 grados
+ 8000380:	4811      	ldr	r0, [pc, #68]	@ (80003c8 <ADC1_2_IRQHandler+0x9c>)
+ 8000382:	089b      	lsrs	r3, r3, #2
+ 8000384:	fba0 0303 	umull	r0, r3, r0, r3
+ 8000388:	4910      	ldr	r1, [pc, #64]	@ (80003cc <ADC1_2_IRQHandler+0xa0>)
+ 800038a:	089b      	lsrs	r3, r3, #2
+			DEVMAP->TIMs[TIM2].REGs.CNT = 0;
+ 800038c:	f8cc 4024 	str.w	r4, [ip, #36]	@ 0x24
+            delta_ticks = ticks_one_lap / LED_PATTERN_LENGTH; // Ventana de 2 grados
+ 8000390:	600b      	str	r3, [r1, #0]
+            if (delta_ticks <= 0) {
+ 8000392:	680b      	ldr	r3, [r1, #0]
+ 8000394:	b90b      	cbnz	r3, 800039a <ADC1_2_IRQHandler+0x6e>
                     delta_ticks = 1;
- 80003e2:	2301      	movs	r3, #1
- 80003e4:	6033      	str	r3, [r6, #0]
-                last_capture_ticks = current_ticks;
- 80003e6:	6004      	str	r4, [r0, #0]
+ 8000396:	2301      	movs	r3, #1
+ 8000398:	600b      	str	r3, [r1, #0]
             low_detected = 0;
- 80003e8:	2300      	movs	r3, #0
-            laps = (laps + 1) % 180;
- 80003ea:	24b4      	movs	r4, #180	@ 0xb4
- 80003ec:	4910      	ldr	r1, [pc, #64]	@ (8000430 <ADC1_2_IRQHandler+0xf4>)
+ 800039a:	2300      	movs	r3, #0
+			laps = (laps + 1) % 180;
+ 800039c:	f04f 0cb4 	mov.w	ip, #180	@ 0xb4
+ 80003a0:	490b      	ldr	r1, [pc, #44]	@ (80003d0 <ADC1_2_IRQHandler+0xa4>)
             low_detected = 0;
- 80003ee:	7013      	strb	r3, [r2, #0]
-            laps = (laps + 1) % 180;
- 80003f0:	880b      	ldrh	r3, [r1, #0]
- 80003f2:	4810      	ldr	r0, [pc, #64]	@ (8000434 <ADC1_2_IRQHandler+0xf8>)
- 80003f4:	b29b      	uxth	r3, r3
- 80003f6:	3301      	adds	r3, #1
- 80003f8:	089a      	lsrs	r2, r3, #2
- 80003fa:	fba0 0202 	umull	r0, r2, r0, r2
- 80003fe:	0892      	lsrs	r2, r2, #2
- 8000400:	fb04 3312 	mls	r3, r4, r2, r3
- 8000404:	b29b      	uxth	r3, r3
- 8000406:	800b      	strh	r3, [r1, #0]
- 8000408:	e7a7      	b.n	800035a <ADC1_2_IRQHandler+0x1e>
- 800040a:	bf00      	nop
- 800040c:	40012000 	.word	0x40012000
- 8000410:	20000024 	.word	0x20000024
- 8000414:	20000020 	.word	0x20000020
- 8000418:	2000001c 	.word	0x2000001c
- 800041c:	20000000 	.word	0x20000000
- 8000420:	20000004 	.word	0x20000004
- 8000424:	91a2b3c5 	.word	0x91a2b3c5
- 8000428:	cccccccd 	.word	0xcccccccd
- 800042c:	20000018 	.word	0x20000018
- 8000430:	2000001e 	.word	0x2000001e
- 8000434:	16c16c17 	.word	0x16c16c17
+ 80003a2:	7013      	strb	r3, [r2, #0]
+			laps = (laps + 1) % 180;
+ 80003a4:	880b      	ldrh	r3, [r1, #0]
+ 80003a6:	4808      	ldr	r0, [pc, #32]	@ (80003c8 <ADC1_2_IRQHandler+0x9c>)
+ 80003a8:	b29b      	uxth	r3, r3
+ 80003aa:	3301      	adds	r3, #1
+ 80003ac:	089a      	lsrs	r2, r3, #2
+ 80003ae:	fba0 0202 	umull	r0, r2, r0, r2
+ 80003b2:	0892      	lsrs	r2, r2, #2
+ 80003b4:	fb0c 3312 	mls	r3, ip, r2, r3
+ 80003b8:	b29b      	uxth	r3, r3
+ 80003ba:	800b      	strh	r3, [r1, #0]
+ 80003bc:	e7c5      	b.n	800034a <ADC1_2_IRQHandler+0x1e>
+ 80003be:	bf00      	nop
+ 80003c0:	40012000 	.word	0x40012000
+ 80003c4:	20000006 	.word	0x20000006
+ 80003c8:	16c16c17 	.word	0x16c16c17
+ 80003cc:	20000000 	.word	0x20000000
+ 80003d0:	20000004 	.word	0x20000004
 
-08000438 <led_pattern>:
- 8000438:	80808080 80808080 90c09fff 90c090c0     ................
- 8000448:	88a090c0 8080879f 9fef8080 80808080     ................
- 8000458:	88a0879f 91c090c0 89c091c0 808087a0     ................
- 8000468:	9fef8080 80808080 80c080c0 9fff80c0     ................
- 8000478:	80c080c0 808080c0 9c808080 829e8381     ................
- 8000488:	829e82e0 9c808381 80808080 90809fff     ................
- 8000498:	90809080 90809080 80808080 90c29fff     ................
- 80004a8:	90c090c2 90c090c0 80808080 90a2889c     ................
- 80004b8:	90c190c2 90c190c1 80808fa0 80808080     ................
- 80004c8:	90c090c0 90c09fff 808090c0 90c08080     ................
- 80004d8:	9fff90c0 90c090c0 80808080 00008080     ................
- 80004e8:	00000000 80828082 80858085 81888188     ................
- 80004f8:	82908290 84a084a0 98c098c0 84a084a0     ................
- 8000508:	82908290 81888188 80858085 80828082     ................
- 8000518:	00000000 80808080 9fff8080 809080a0     ................
- 8000528:	80908088 9fff80a0 80808080 80809fef     ................
- 8000538:	9fff8080 81c180c1 84c282c1 808098bc     ................
- 8000548:	9c808080 828e8381 82c082b8 828e82b8     ................
- 8000558:	9c808381 80808080 80c19fff 82c181c1     ................
- 8000568:	98bc84c2 80808080 88a0879f 90c090c0     ................
- 8000578:	90c090c0 80808080 81809fff 81808180     ................
- 8000588:	81808180 80809fff 9fef8080 80808080     ................
- 8000598:	80808080 80808080                       ........
+080003d4 <led_pattern>:
+ 80003d4:	80808080 80808080 90c09fff 90c090c0     ................
+ 80003e4:	88a090c0 8080879f 9fef8080 80808080     ................
+ 80003f4:	88a0879f 91c090c0 89c091c0 808087a0     ................
+ 8000404:	9fef8080 80808080 80c080c0 9fff80c0     ................
+ 8000414:	80c080c0 808080c0 9c808080 829e8381     ................
+ 8000424:	829e82e0 9c808381 80808080 90809fff     ................
+ 8000434:	90809080 90809080 80808080 90c29fff     ................
+ 8000444:	90c090c2 90c090c0 80808080 90a2889c     ................
+ 8000454:	90c190c2 90c190c1 80808fa0 80808080     ................
+ 8000464:	90c090c0 90c09fff 808090c0 90c08080     ................
+ 8000474:	9fff90c0 90c090c0 80808080 00008080     ................
+ 8000484:	00000000 80828082 80858085 81888188     ................
+ 8000494:	82908290 84a084a0 98c098c0 84a084a0     ................
+ 80004a4:	82908290 81888188 80858085 80828082     ................
+ 80004b4:	00000000 80808080 9fff8080 809080a0     ................
+ 80004c4:	80908088 9fff80a0 80808080 80809fef     ................
+ 80004d4:	9fff8080 81c180c1 84c282c1 808098bc     ................
+ 80004e4:	9c808080 828e8381 82c082b8 828e82b8     ................
+ 80004f4:	9c808381 80808080 80c19fff 82c181c1     ................
+ 8000504:	98bc84c2 80808080 88a0879f 90c090c0     ................
+ 8000514:	90c090c0 80808080 81809fff 81808180     ................
+ 8000524:	81808180 80809fff 9fef8080 80808080     ................
+ 8000534:	80808080 80808080                       ........

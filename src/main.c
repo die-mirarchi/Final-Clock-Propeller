@@ -224,20 +224,11 @@ enum IRQs {
 #define GPIO_OUTPUT_MODE_PUSH_PULL    0x33333333
 #define TIM2_PRESCALER_30KHZ          (2400U - 1U)
 #define TIM2_AUTO_RELOAD_MAX_16BIT    0xFFFFU
-#define TICKS_FILTER_NUMERATOR        3U
-#define TICKS_FILTER_DENOMINATOR      4U
-#define TICKS_JUMP_PERCENT_TOLERANCE  50U
 
 static volatile uint8_t low_detected = 0;
-static volatile uint32_t last_capture_ticks = 0;
 static volatile uint32_t delta_ticks = 1;
 static volatile uint16_t laps = 0;
-static volatile uint32_t filtered_ticks_one_lap = 0;
-/*static const uint16_t led_pins[14] = {
-	7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15
-};
-*/
-/*
+
 static const uint16_t led_pattern[180] = {
         0x8080, 0x8080, 0x8080, 0x8080, 0x9FFF, 0x90C0, 0x90C0, 0x90C0,
         0x90C0, 0x88A0, 0x879F, 0x8080, 0x8080, 0x9FEF, 0x8080, 0x8080,
@@ -263,34 +254,6 @@ static const uint16_t led_pattern[180] = {
         0x8180, 0x8180, 0x9FFF, 0x8080, 0x8080, 0x9FEF, 0x8080, 0x8080,
         0x8080, 0x8080, 0x8080, 0x8080
 };
-*/
-static const uint16_t led_pattern[180] = {
-        0x8080, 0x8080, 0x8080, 0x8080, 0x9FFF, 0x90C0, 0x90C0, 0x90C0,
-        0x90C0, 0x88A0, 0x879F, 0x8080, 0x8080, 0x9FEF, 0x8080, 0x8080,
-        0x879F, 0x88A0, 0x90C0, 0x91C0, 0x91C0, 0x89C0, 0x87A0, 0x8080,
-        0x8080, 0x9FEF, 0x8080, 0x8080, 0x80C0, 0x80C0, 0x80C0, 0x9FFF,
-        0x80C0, 0x80C0, 0x80C0, 0x8080, 0x8080, 0x9C80, 0x8381, 0x829E,
-        0x82E0, 0x829E, 0x8381, 0x9C80, 0x8080, 0x8080, 0x9FFF, 0x9080,
-        0x9080, 0x9080, 0x9080, 0x9080, 0x8080, 0x8080, 0x9FFF, 0x90C2,
-        0x90C2, 0x90C0, 0x90C0, 0x90C0, 0x8080, 0x8080, 0x889C, 0x90A2,
-        0x90C2, 0x90C1, 0x90C1, 0x90C1, 0x8FA0, 0x8080, 0x8080, 0x8080,
-        0x90C0, 0x90C0, 0x9FFF, 0x90C0, 0x90C0, 0x8080, 0x8080, 0x90C0,
-        0x90C0, 0x9FFF, 0x90C0, 0x90C0, 0x8080, 0x8080, 0x8080, 0x0000,
-        0x0000, 0x0000, 0x8082, 0x8082, 0x8085, 0x8085, 0x8188, 0x8188,
-        0x8290, 0x8290, 0x84A0, 0x84A0, 0x98C0, 0x98C0, 0x84A0, 0x84A0,
-        0x8290, 0x8290, 0x8188, 0x8188, 0x8085, 0x8085, 0x8082, 0x8082,
-        0x0000, 0x0000, 0x8080, 0x8080, 0x8080, 0x9FFF, 0x80A0, 0x8090,
-        0x8088, 0x8090, 0x80A0, 0x9FFF, 0x8080, 0x8080, 0x9FEF, 0x8080,
-        0x8080, 0x9FFF, 0x80C1, 0x81C1, 0x82C1, 0x84C2, 0x98BC, 0x8080,
-        0x8080, 0x9C80, 0x8381, 0x828E, 0x82B8, 0x82C0, 0x82B8, 0x828E,
-        0x8381, 0x9C80, 0x8080, 0x8080, 0x9FFF, 0x80C1, 0x81C1, 0x82C1,
-        0x84C2, 0x98BC, 0x8080, 0x8080, 0x879F, 0x88A0, 0x90C0, 0x90C0,
-        0x90C0, 0x90C0, 0x8080, 0x8080, 0x9FFF, 0x8180, 0x8180, 0x8180,
-        0x8180, 0x8180, 0x9FFF, 0x8080, 0x8080, 0x9FEF, 0x8080, 0x8080,
-        0x8080, 0x8080, 0x8080, 0x8080
-};
-// Establece el registro ODR de GPIOA a partir de una máscara de 16 bits
-// El bit 0 de `mask` corresponde a `led_pins[0]` (pin 7), bit 1 a `led_pins[1]`, etc.
 
 
 void ADC1_2_IRQHandler(void);
@@ -411,9 +374,9 @@ int main(void)
         // ========================================
         // Configurar ADC1 para lecturas continuas en canal 9 (PB1)
         // ========================================
-        // El ADC1 necesita un reloj máximo de 14MHz, así que dividimos PCLK2 (72MHz) / 6 = 12MHz
+        // El ADC1 necesita un reloj máximo de 14MHz, así que dividimos PCLK2 (72MHz) / 8 = 9MHz
         DEVMAP->RCC.REGs.CFGR &= ~(0b11 << 14);
-        DEVMAP->RCC.REGs.CFGR |=  (0b11 << 14);             // ADCPRE = 10: PCLK2/6
+        DEVMAP->RCC.REGs.CFGR |=  (0b11 << 14);             // ADCPRE = 10: PCLK2/8
 
         // Configurar ADC primero, ANTES de encender
         DEVMAP->ADC[ADC1].REGs.SMPR2 &= ~(0b111 << (3 * ADC_CHANNEL_B1));
@@ -443,8 +406,8 @@ int main(void)
         // ========================================
         // Configurar PA[15:0] como salidas 50MHz push-pull
         // ========================================
-	// CRL configura PA[7:0]:   MODE=11 (50MHz), CNF=00 (Push-pull) = 0x3 por pin
-	// CRH configura PA[15:8]:  MODE=11 (50MHz), CNF=00 (Push-pull) = 0x3 por pin
+		// CRL configura PA[7:0]:   MODE=11 (50MHz), CNF=00 (Push-pull) = 0x3 por pin
+		// CRH configura PA[15:8]:  MODE=11 (50MHz), CNF=00 (Push-pull) = 0x3 por pin
         DEVMAP->GPIOs[GPIOA].REGs.CRL = GPIO_OUTPUT_MODE_PUSH_PULL;  // PA[7:0]  como salidas
         DEVMAP->GPIOs[GPIOA].REGs.CRH = GPIO_OUTPUT_MODE_PUSH_PULL;  // PA[15:8] como salidas
 	
@@ -468,7 +431,7 @@ int main(void)
 
 
         for(;;) {
-            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[(((DEVMAP->TIMs[TIM2].REGs.CNT - last_capture_ticks) / delta_ticks)+((laps/10))) % LED_PATTERN_LENGTH];
+            DEVMAP->GPIOs[GPIOA].REGs.ODR = led_pattern[((DEVMAP->TIMs[TIM2].REGs.CNT  / delta_ticks)+(laps)) % LED_PATTERN_LENGTH];
         }
 
         return 0;
@@ -476,7 +439,7 @@ int main(void)
 
 void ADC1_2_IRQHandler(void)
 {
-    // Leer DR (esto automáticamente limpia EOC en modo continuo)
+        // Leer DR (esto automáticamente limpia EOC en modo continuo)
     uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
 
     if (!low_detected && (sample < ADC_THRESHOLD_LOW_RAW)) {
@@ -484,36 +447,15 @@ void ADC1_2_IRQHandler(void)
     }
 
     if (low_detected && (sample > ADC_THRESHOLD_HIGH_RAW)) {
-        uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
-        uint32_t ticks_one_lap = current_ticks - last_capture_ticks;
-        last_capture_ticks = current_ticks;
-
-        uint8_t accept_sample = 1U;
-        if (filtered_ticks_one_lap == 0U) {
-            filtered_ticks_one_lap = ticks_one_lap;
-        } else {
-            uint32_t tolerance = (filtered_ticks_one_lap * TICKS_JUMP_PERCENT_TOLERANCE) / 100U;
-            uint32_t lower_bound = (filtered_ticks_one_lap > tolerance) ? (filtered_ticks_one_lap - tolerance) : 0U;
-            uint32_t upper_bound = filtered_ticks_one_lap + tolerance;
-
-            if ((ticks_one_lap < lower_bound) || (ticks_one_lap > upper_bound)) {
-                accept_sample = 0U;
-            } else {
-                filtered_ticks_one_lap = ((filtered_ticks_one_lap * TICKS_FILTER_NUMERATOR) + ticks_one_lap) / TICKS_FILTER_DENOMINATOR;
+            uint32_t ticks_one_lap = DEVMAP->TIMs[TIM2].REGs.CNT;
+			DEVMAP->TIMs[TIM2].REGs.CNT = 0;
+            delta_ticks = ticks_one_lap / LED_PATTERN_LENGTH; // Ventana de 2 grados
+            if (delta_ticks <= 0) {
+                    delta_ticks = 1;
             }
-        }
-
-        if (accept_sample != 0U) {
-            delta_ticks = filtered_ticks_one_lap / LED_PATTERN_LENGTH; // Ventana de 2 grados filtrada
-            if (delta_ticks <= 0U) {
-                delta_ticks = 1U;
-            }
-        }
-
-        low_detected = 0;
-        laps = (laps + 1) % 1800;
+            low_detected = 0;
+			laps = (laps + 1) % 180;
     }
-    DEVMAP->ADC[ADC1].REGs.SR &= ~(1 << 1);                                 // Clear EOC bit
-    CLR_IRQ(IRQ_ADC1_2);
+	DEVMAP->ADC[ADC1].REGs.SR &= ~(1 << 1);					// Clear EOC bit
+	CLR_IRQ(IRQ_ADC1_2);
 }
-
