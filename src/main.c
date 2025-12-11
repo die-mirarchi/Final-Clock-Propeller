@@ -224,11 +224,15 @@ enum IRQs {
 #define GPIO_OUTPUT_MODE_PUSH_PULL    0x33333333
 #define TIM2_PRESCALER_30KHZ          (2400U - 1U)
 #define TIM2_AUTO_RELOAD_MAX_16BIT    0xFFFFU
+#define TICKS_FILTER_NUMERATOR        3U
+#define TICKS_FILTER_DENOMINATOR      4U
+#define TICKS_JUMP_PERCENT_TOLERANCE  50U
 
 static volatile uint8_t low_detected = 0;
 static volatile uint32_t last_capture_ticks = 0;
 static volatile uint32_t delta_ticks = 1;
 static volatile uint16_t laps = 0;
+static volatile uint32_t filtered_ticks_one_lap = 0;
 /*static const uint16_t led_pins[14] = {
 	7, 6, 5, 4, 3, 2, 1, 0, 8, 9, 10, 11, 12, 15
 };
@@ -472,7 +476,7 @@ int main(void)
 
 void ADC1_2_IRQHandler(void)
 {
-        // Leer DR (esto automáticamente limpia EOC en modo continuo)
+    // Leer DR (esto automáticamente limpia EOC en modo continuo)
     uint16_t sample = (uint16_t)(DEVMAP->ADC[ADC1].REGs.DR & 0xFFFF);
 
     if (!low_detected && (sample < ADC_THRESHOLD_LOW_RAW)) {
@@ -480,16 +484,36 @@ void ADC1_2_IRQHandler(void)
     }
 
     if (low_detected && (sample > ADC_THRESHOLD_HIGH_RAW)) {
-            uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
-            uint16_t ticks_one_lap = current_ticks - last_capture_ticks;
-            last_capture_ticks = current_ticks;
-            delta_ticks = ticks_one_lap / LED_PATTERN_LENGTH; // Ventana de 2 grados
-            if (delta_ticks <= 0) {
-                    delta_ticks = 1;
+        uint32_t current_ticks = DEVMAP->TIMs[TIM2].REGs.CNT;
+        uint32_t ticks_one_lap = current_ticks - last_capture_ticks;
+        last_capture_ticks = current_ticks;
+
+        uint8_t accept_sample = 1U;
+        if (filtered_ticks_one_lap == 0U) {
+            filtered_ticks_one_lap = ticks_one_lap;
+        } else {
+            uint32_t tolerance = (filtered_ticks_one_lap * TICKS_JUMP_PERCENT_TOLERANCE) / 100U;
+            uint32_t lower_bound = (filtered_ticks_one_lap > tolerance) ? (filtered_ticks_one_lap - tolerance) : 0U;
+            uint32_t upper_bound = filtered_ticks_one_lap + tolerance;
+
+            if ((ticks_one_lap < lower_bound) || (ticks_one_lap > upper_bound)) {
+                accept_sample = 0U;
+            } else {
+                filtered_ticks_one_lap = ((filtered_ticks_one_lap * TICKS_FILTER_NUMERATOR) + ticks_one_lap) / TICKS_FILTER_DENOMINATOR;
             }
-            low_detected = 0;
-			laps = (laps + 1) % 1800;
+        }
+
+        if (accept_sample != 0U) {
+            delta_ticks = filtered_ticks_one_lap / LED_PATTERN_LENGTH; // Ventana de 2 grados filtrada
+            if (delta_ticks <= 0U) {
+                delta_ticks = 1U;
+            }
+        }
+
+        low_detected = 0;
+        laps = (laps + 1) % 1800;
     }
-	DEVMAP->ADC[ADC1].REGs.SR &= ~(1 << 1);					// Clear EOC bit
-	CLR_IRQ(IRQ_ADC1_2);
+    DEVMAP->ADC[ADC1].REGs.SR &= ~(1 << 1);                                 // Clear EOC bit
+    CLR_IRQ(IRQ_ADC1_2);
 }
+
